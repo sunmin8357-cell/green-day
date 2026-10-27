@@ -1,0 +1,2707 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Day - 친환경 탄소 절감 및 글로벌 탄소 데이터 플랫폼</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#E8F5E9',
+                            sage: '#F4FBF7',
+                            DEFAULT: '#2E7D32',
+                            dark: '#1B5E20',
+                            accent: '#4CAF50',
+                            border: '#C8E6C9'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 6 Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- React 18 & Babel Standalone -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body {
+            background-color: #F4FBF7;
+            font-family: 'Pretendard', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F4FBF7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #C8E6C9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #81C784;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-emerald-100 selection:text-emerald-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // 시안 예시 데이터 (필요 시 복원/테스트용)
+        const SAMPLE_DEMO_RECORDS = [
+            {
+                id: 'rec-20250421',
+                date: '2025-04-21',
+                mood: '😄',
+                diary: '오늘은 날씨가 화창해서 지하철 대신 자전거를 타고 출근했다. 상쾌한 바람을 맞으니 기분도 좋고 탄소도 아낄 수 있어 뿌듯하다!',
+                activities: [
+                    { id: '1', category: '이동', content: '집에서 자전거 타고 출퇴근', amount: 10, unit: 'km', savingKg: 0.65 },
+                    { id: '2', category: '일회용품', content: '개인 텀블러 사용 (2회)', amount: 2, unit: '회', savingKg: 0.20 }
+                ],
+                totalSavingKg: 0.85
+            },
+            {
+                id: 'rec-20250420',
+                date: '2025-04-20',
+                mood: '🙂',
+                diary: '점심에 비건 샐러드 보울을 먹고, 마트 갈 때 장바구니를 챙겨갔다.',
+                activities: [
+                    { id: '3', category: '식사', content: '점심 채식 위주 식단', amount: 1, unit: '끼', savingKg: 0.53 }
+                ],
+                totalSavingKg: 0.53
+            },
+            {
+                id: 'rec-20250419',
+                date: '2025-04-19',
+                mood: '😄',
+                diary: '가까운 거리는 모두 걸어서 이동했다. 만보기 12,000보 달성!',
+                activities: [
+                    { id: '4', category: '이동', content: '도보 이동 5km', amount: 5, unit: 'km', savingKg: 0.45 },
+                    { id: '5', category: '전자기기', content: '안 쓰는 멀티탭 소등', amount: 1, unit: '일', savingKg: 0.15 }
+                ],
+                totalSavingKg: 0.60
+            },
+            {
+                id: 'rec-20250418',
+                date: '2025-04-18',
+                mood: '😐',
+                diary: '회사에서 종이컵 대신 머그컵을 철저히 사용했다.',
+                activities: [
+                    { id: '6', category: '일회용품', content: '머그컵 사용', amount: 3, unit: '회', savingKg: 0.30 }
+                ],
+                totalSavingKg: 0.30
+            },
+            {
+                id: 'rec-20250417',
+                date: '2025-04-17',
+                mood: '🙂',
+                diary: '퇴근길 지하철 4정거장 전에 내려서 봄 공기 마시며 걸어왔다.',
+                activities: [
+                    { id: '7', category: '이동', content: '지하철 및 걷기', amount: 1, unit: '회', savingKg: 0.38 }
+                ],
+                totalSavingKg: 0.38
+            },
+            {
+                id: 'rec-20250416',
+                date: '2025-04-16',
+                mood: '😄',
+                diary: '집에서 전자레인지와 에어컨 대기전력 차단 콘센트 설치 완료.',
+                activities: [
+                    { id: '8', category: '전자기기', content: '대기전력 완벽 차단', amount: 1, unit: '일', savingKg: 0.24 }
+                ],
+                totalSavingKg: 0.24
+            },
+            {
+                id: 'rec-20250415',
+                date: '2025-04-15',
+                mood: '🙂',
+                diary: '화요일 채식 데이 실천. 두부 스테이크가 생각보다 정말 맛있었다.',
+                activities: [
+                    { id: '9', category: '식사', content: '저녁 채식 실천', amount: 1, unit: '끼', savingKg: 0.30 }
+                ],
+                totalSavingKg: 0.30
+            }
+        ];
+
+        // 기본 실천 프리셋 (단위당 절감량 kg 기준)
+        const ACTIVITY_PRESETS = [
+            { category: '이동', label: '자전거 출퇴근/이동 (1km당)', defaultContent: '자전거 이용', unit: 'km', factor: 0.065 },
+            { category: '이동', label: '대중교통(지하철/버스) 이용 (1회당)', defaultContent: '대중교통 이용', unit: '회', factor: 0.35 },
+            { category: '이동', label: '가까운 거리 걷기 (1km당)', defaultContent: '도보 이동', unit: 'km', factor: 0.09 },
+            { category: '일회용품', label: '개인 텀블러/머그컵 (1회당)', defaultContent: '텀블러 사용', unit: '회', factor: 0.10 },
+            { category: '일회용품', label: '장바구니 사용 (1회당)', defaultContent: '장바구니 챙기기', unit: '회', factor: 0.08 },
+            { category: '식사', label: '채식 위주 식사 (1끼당)', defaultContent: '채식 식사', unit: '끼', factor: 0.50 },
+            { category: '전자기기', label: '안 쓰는 플러그 뽑기/소등 (1일당)', defaultContent: '대기전력 차단', unit: '일', factor: 0.15 }
+        ];
+
+        // OWID 기준 주요 국가 탄소 배출 데이터 (2023년 Mt CO2 기준 & 가스 1인당 데이터)
+        const OWID_GLOBAL_EMISSIONS = [
+            { country: 'China', nameKo: '중국', emissionsMt: 11472, perCapitaT: 8.8, gasPerCapitaT: 0.25, shareGas: '12.4%', color: '#ef4444' },
+            { country: 'USA', nameKo: '미국', emissionsMt: 5081, perCapitaT: 14.4, gasPerCapitaT: 4.85, shareGas: '21.5%', color: '#3b82f6' },
+            { country: 'India', nameKo: '인도', emissionsMt: 2467, perCapitaT: 1.8, gasPerCapitaT: 0.09, shareGas: '3.1%', color: '#f59e0b' },
+            { country: 'Russia', nameKo: '러시아', emissionsMt: 1748, perCapitaT: 12.1, gasPerCapitaT: 5.12, shareGas: '9.8%', color: '#8b5cf6' },
+            { country: 'Japan', nameKo: '일본', emissionsMt: 1054, perCapitaT: 8.5, gasPerCapitaT: 1.85, shareGas: '2.8%', color: '#ec4899' },
+            { country: 'South Korea', nameKo: '한국', emissionsMt: 660, perCapitaT: 11.6, gasPerCapitaT: 2.359, shareGas: '1.545%', color: '#2E7D32', isSelected: true }
+        ];
+
+        // 한국 연도별 탄소 배출량 추이 (1990 - 2023 OWID 데이터 요약)
+        const KOREA_HISTORICAL_DATA = [
+            { year: 1990, totalMt: 250, gasPerCapita: 0.18 },
+            { year: 1995, totalMt: 395, gasPerCapita: 0.45 },
+            { year: 2000, totalMt: 460, gasPerCapita: 0.95 },
+            { year: 2005, totalMt: 510, gasPerCapita: 1.42 },
+            { year: 2010, totalMt: 615, gasPerCapita: 1.95 },
+            { year: 2015, totalMt: 658, gasPerCapita: 2.12 },
+            { year: 2018, totalMt: 690, gasPerCapita: 2.45 },
+            { year: 2020, totalMt: 630, gasPerCapita: 2.21 },
+            { year: 2022, totalMt: 672, gasPerCapita: 2.41 },
+            { year: 2023, totalMt: 660, gasPerCapita: 2.359 }
+        ];
+
+        // 글로벌 및 대한민국 온실가스 배출 분야별 비중 (GHG Emissions by Sector ~2023 OWID / GIR)
+        const SECTOR_BREAKDOWN_DATA = [
+            {
+                id: 'electricity',
+                name: '전기 및 열 생산 (전환)',
+                subName: 'Electricity & Heat',
+                icon: 'fa-bolt',
+                worldPct: 34.2,
+                koreaPct: 37.0,
+                color: '#EF4444',
+                desc: '발전소 석탄·가스 연소 및 지역난방 공급 등 전력 및 열 생산'
+            },
+            {
+                id: 'industry',
+                name: '제조업 및 산업공정',
+                subName: 'Manufacturing & Industry',
+                icon: 'fa-industry',
+                worldPct: 13.8,
+                koreaPct: 35.6,
+                color: '#F97316',
+                desc: '철강, 석유화학, 반도체 제조 등 (대한민국 산업 특성상 비중이 매우 높음)'
+            },
+            {
+                id: 'transport',
+                name: '수송 (교통 및 물류)',
+                subName: 'Transport',
+                icon: 'fa-car-side',
+                worldPct: 16.5,
+                koreaPct: 14.4,
+                color: '#3B82F6',
+                desc: '도로 자동차, 화물차, 항공기, 해운 등 연료 연소 배출'
+            },
+            {
+                id: 'agriculture',
+                name: '농축산업 및 토지이용',
+                subName: 'Agriculture & AFOLU',
+                icon: 'fa-wheat-awn',
+                worldPct: 12.5,
+                koreaPct: 3.2,
+                color: '#10B981',
+                desc: '가축 사육 메탄, 비료 사용 아산화질소, 산림 전용 등'
+            },
+            {
+                id: 'buildings',
+                name: '건물 (주거 및 상업)',
+                subName: 'Buildings',
+                icon: 'fa-building',
+                worldPct: 7.2,
+                koreaPct: 7.2,
+                color: '#8B5CF6',
+                desc: '가정 및 상업용 건물의 냉난방 및 가스 취사 직접 배출'
+            },
+            {
+                id: 'process',
+                name: '기타 산업 및 탈루 에너지',
+                subName: 'Fugitive & Other',
+                icon: 'fa-smog',
+                worldPct: 12.5,
+                koreaPct: 0.0,
+                color: '#64748B',
+                desc: '화석연료 채굴 시 메탄 유출 및 시멘트 소성 공정'
+            },
+            {
+                id: 'waste',
+                name: '폐기물 처리',
+                subName: 'Waste',
+                icon: 'fa-trash-can',
+                worldPct: 3.3,
+                koreaPct: 2.6,
+                color: '#D97706',
+                desc: '쓰레기 매립지 메탄 및 하수 처리, 소각 과정'
+            }
+        ];
+
+        // 주요 5개국 연도별 탄소 배출량 추이 데이터 (1990 - 2023)
+        const HISTORICAL_DATA_BY_COUNTRY = {
+            'South Korea': {
+                nameKo: '대한민국',
+                countryKey: 'South Korea',
+                peakYear: 2018,
+                peakVal: '690 Mt',
+                change1990: '+164%',
+                color: '#2E7D32',
+                trendDesc: '1990년대 이후 급격한 제조업 성장으로 배출량이 증가했으나, 2018년 정점 도달 후 재생에너지 보급과 산업 효율화로 점진적인 감소세에 진입했습니다.',
+                data: [
+                    { year: 1990, totalMt: 250 },
+                    { year: 1995, totalMt: 395 },
+                    { year: 2000, totalMt: 460 },
+                    { year: 2005, totalMt: 510 },
+                    { year: 2010, totalMt: 615 },
+                    { year: 2015, totalMt: 658 },
+                    { year: 2018, totalMt: 690 },
+                    { year: 2020, totalMt: 630 },
+                    { year: 2022, totalMt: 672 },
+                    { year: 2023, totalMt: 660 }
+                ]
+            },
+            'USA': {
+                nameKo: '미국',
+                countryKey: 'USA',
+                peakYear: 2005,
+                peakVal: '6,130 Mt',
+                change1990: '-0.8%',
+                color: '#3B82F6',
+                trendDesc: '2005년 약 6,130 Mt으로 정점을 기록한 후, 석탄 발전의 셰일가스 및 신재생에너지 대체로 피크 대비 약 17.1% 감축에 성공했습니다.',
+                data: [
+                    { year: 1990, totalMt: 5120 },
+                    { year: 1995, totalMt: 5350 },
+                    { year: 2000, totalMt: 5850 },
+                    { year: 2005, totalMt: 6130 },
+                    { year: 2010, totalMt: 5700 },
+                    { year: 2015, totalMt: 5250 },
+                    { year: 2018, totalMt: 5380 },
+                    { year: 2020, totalMt: 4710 },
+                    { year: 2022, totalMt: 5090 },
+                    { year: 2023, totalMt: 5081 }
+                ]
+            },
+            'China': {
+                nameKo: '중국',
+                countryKey: 'China',
+                peakYear: 2023,
+                peakVal: '11,472 Mt',
+                change1990: '+374%',
+                color: '#EF4444',
+                trendDesc: '세계의 공장으로서 폭발적인 경제 성장을 거치며 1990년 대비 배출량이 4.7배 이상 급증했습니다. 현재 2030 탄소 피크, 2060 탄소중립을 선언했습니다.',
+                data: [
+                    { year: 1990, totalMt: 2420 },
+                    { year: 1995, totalMt: 3350 },
+                    { year: 2000, totalMt: 3650 },
+                    { year: 2005, totalMt: 5890 },
+                    { year: 2010, totalMt: 8500 },
+                    { year: 2015, totalMt: 9700 },
+                    { year: 2018, totalMt: 10300 },
+                    { year: 2020, totalMt: 10670 },
+                    { year: 2022, totalMt: 11150 },
+                    { year: 2023, totalMt: 11472 }
+                ]
+            },
+            'Germany': {
+                nameKo: '독일',
+                countryKey: 'Germany',
+                peakYear: 1990,
+                peakVal: '1,050 Mt',
+                change1990: '-36.2%',
+                color: '#8B5CF6',
+                trendDesc: '강력한 탈석탄 및 에너지 전환(Energiewende) 정책을 통해 1990년 대비 36% 이상 감축하며 OECD 주요국 중 가장 선도적인 탈탄소화를 구현 중입니다.',
+                data: [
+                    { year: 1990, totalMt: 1050 },
+                    { year: 1995, totalMt: 940 },
+                    { year: 2000, totalMt: 900 },
+                    { year: 2005, totalMt: 865 },
+                    { year: 2010, totalMt: 830 },
+                    { year: 2015, totalMt: 795 },
+                    { year: 2018, totalMt: 755 },
+                    { year: 2020, totalMt: 640 },
+                    { year: 2022, totalMt: 665 },
+                    { year: 2023, totalMt: 670 }
+                ]
+            },
+            'Japan': {
+                nameKo: '일본',
+                countryKey: 'Japan',
+                peakYear: 2013,
+                peakVal: '1,310 Mt',
+                change1990: '-9.1%',
+                color: '#EC4899',
+                trendDesc: '2011년 후쿠시마 사태 이후 화력발전 비중 확대로 2013년 피크를 맞았으나, 지속적인 절전 및 신재생 확대로 피크 대비 약 19.5% 감축했습니다.',
+                data: [
+                    { year: 1990, totalMt: 1160 },
+                    { year: 1995, totalMt: 1220 },
+                    { year: 2000, totalMt: 1250 },
+                    { year: 2005, totalMt: 1280 },
+                    { year: 2010, totalMt: 1260 },
+                    { year: 2013, totalMt: 1310 },
+                    { year: 2018, totalMt: 1160 },
+                    { year: 2020, totalMt: 1060 },
+                    { year: 2022, totalMt: 1080 },
+                    { year: 2023, totalMt: 1054 }
+                ]
+            }
+        };
+
+        // 1인당 배출량 심층 비교 데이터 (2023 OWID)
+        const PER_CAPITA_RANKINGS = [
+            { country: '미국 (USA)', val: 14.4, gasVal: 4.85, isHighlight: false, color: '#3B82F6' },
+            { country: '러시아 (Russia)', val: 12.1, gasVal: 5.12, isHighlight: false, color: '#6366F1' },
+            { country: '대한민국 (Korea)', val: 11.6, gasVal: 2.359, isHighlight: true, color: '#2E7D32' },
+            { country: '중국 (China)', val: 8.8, gasVal: 0.25, isHighlight: false, color: '#EF4444' },
+            { country: '일본 (Japan)', val: 8.5, gasVal: 1.85, isHighlight: false, color: '#EC4899' },
+            { country: '독일 (Germany)', val: 7.9, gasVal: 1.72, isHighlight: false, color: '#8B5CF6' },
+            { country: '🌐 전 세계 평균 (World Avg)', val: 4.7, gasVal: 1.05, isWorldAvg: true, color: '#0EA5E9' },
+            { country: '인도 (India)', val: 1.8, gasVal: 0.09, isHighlight: false, color: '#F59E0B' }
+        ];
+
+        // 메인 App 컴포넌트
+        function App() {
+            const [activeTab, setActiveTab] = useState('home');
+            // 템플릿화: 사용자가 실제로 작성한 기록만 반영 (기본값 빈 배열)
+            const [records, setRecords] = useState(() => {
+                const saved = localStorage.getItem('greenday_records');
+                return saved !== null ? JSON.parse(saved) : [];
+            });
+            const [notificationMsg, setNotificationMsg] = useState(null);
+            const [username, setUsername] = useState(() => localStorage.getItem('greenday_username') || '초록별 여행자');
+            const [userAvatar, setUserAvatar] = useState(() => localStorage.getItem('greenday_avatar') || '🌱');
+            const [isSearchOpen, setIsSearchOpen] = useState(false);
+            const [isProfileOpen, setIsProfileOpen] = useState(false);
+            const [diarySelectedDate, setDiarySelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+
+            // 로컬 스토리지 동기화
+            useEffect(() => {
+                localStorage.setItem('greenday_records', JSON.stringify(records));
+            }, [records]);
+
+            // 알림 팝업 타이머
+            const showToast = (msg) => {
+                setNotificationMsg(msg);
+                setTimeout(() => setNotificationMsg(null), 3000);
+            };
+
+            // 오늘 및 어제 날짜 계산 (YYYY-MM-DD)
+            const todayDateStr = new Date().toISOString().split('T')[0];
+            const yesterdayDateStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+            const currentYearMonth = todayDateStr.substring(0, 7);
+
+            // 1. 오늘의 탄소 절감량 (실제 입력 연동)
+            const todayRecord = records.find(r => r.date === todayDateStr);
+            const todaySaving = todayRecord ? Math.round(todayRecord.totalSavingKg * 100) / 100 : 0.00;
+
+            // 2. 어제와의 절감량 비교
+            const yesterdayRecord = records.find(r => r.date === yesterdayDateStr);
+            const yesterdaySaving = yesterdayRecord ? Math.round(yesterdayRecord.totalSavingKg * 100) / 100 : 0.00;
+            const diffWithYesterday = Math.round((todaySaving - yesterdaySaving) * 100) / 100;
+
+            // 3. 최근 7일(이번 주) 절감량
+            const past7Days = Array.from({ length: 7 }, (_, i) => {
+                const d = new Date(Date.now() - (6 - i) * 86400000);
+                return d.toISOString().split('T')[0];
+            });
+            const thisWeekSavings = Math.round(
+                records.filter(r => past7Days.includes(r.date))
+                       .reduce((sum, r) => sum + (r.totalSavingKg || 0), 0) * 100
+            ) / 100;
+
+            // 4. 이번 달 절감량
+            const thisMonthSavings = Math.round(
+                records.filter(r => r.date && r.date.startsWith(currentYearMonth))
+                       .reduce((sum, r) => sum + (r.totalSavingKg || 0), 0) * 100
+            ) / 100;
+
+            // 5. 총 누적 절감량
+            const totalSavingsAll = Math.round(
+                records.reduce((sum, r) => sum + (r.totalSavingKg || 0), 0) * 100
+            ) / 100;
+
+            // 6. 소나무 식재 효과 (1그루당 연간 6.6kg 흡수 기준)
+            const pineTrees = (totalSavingsAll / 6.6).toFixed(1);
+
+            // 7. 총 실천 횟수
+            const totalActionCount = records.reduce((sum, r) => sum + (r.activities ? r.activities.length : 0), 0);
+
+            // 8. 연속 기록일(Streak) 실시간 계산
+            const streakDays = useMemo(() => {
+                if (!records || records.length === 0) return 0;
+                const dateSet = new Set(records.map(r => r.date));
+                let streak = 0;
+                let checkDate = new Date();
+                if (!dateSet.has(todayDateStr)) {
+                    if (!dateSet.has(yesterdayDateStr)) return 0;
+                    checkDate = new Date(Date.now() - 86400000);
+                }
+                while (true) {
+                    const dStr = checkDate.toISOString().split('T')[0];
+                    if (dateSet.has(dStr)) {
+                        streak++;
+                        checkDate = new Date(checkDate.getTime() - 86400000);
+                    } else {
+                        break;
+                    }
+                }
+                return streak;
+            }, [records, todayDateStr, yesterdayDateStr]);
+
+            // 9. 가장 많이 실천한 행동 집계
+            const { mostFrequentAction, maxActionCount } = useMemo(() => {
+                const actCounts = {};
+                records.forEach(r => {
+                    (r.activities || []).forEach(a => {
+                        const name = a.content || a.category || '기타';
+                        actCounts[name] = (actCounts[name] || 0) + 1;
+                    });
+                });
+                let best = '기록 없음';
+                let max = 0;
+                Object.entries(actCounts).forEach(([name, count]) => {
+                    if (count > max) {
+                        max = count;
+                        best = name;
+                    }
+                });
+                return { mostFrequentAction: best, maxActionCount: max };
+            }, [records]);
+
+            // 10. 일별 절감량 (최근 7일 SVG 차트)
+            const dailyData = useMemo(() => {
+                const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+                return past7Days.map(dStr => {
+                    const dObj = new Date(dStr + 'T00:00:00');
+                    const dayLabel = dayLabels[dObj.getDay()];
+                    const m = dObj.getMonth() + 1;
+                    const d = dObj.getDate();
+                    const rec = records.find(r => r.date === dStr);
+                    const val = rec ? (rec.totalSavingKg || 0) : 0;
+                    return {
+                        dateStr: dStr,
+                        date: `${m}/${d}`,
+                        label: dStr === todayDateStr ? '오늘' : dayLabel,
+                        val: Math.round(val * 100) / 100,
+                        isToday: dStr === todayDateStr
+                    };
+                });
+            }, [records, past7Days, todayDateStr]);
+
+            // 11. 행동별 절감 비율 (도넛 차트 데이터)
+            const { donutCategories, totalCategorySavings } = useMemo(() => {
+                const categorySavings = { '이동': 0, '식사': 0, '전자기기': 0, '일회용품': 0, '기타': 0 };
+                records.forEach(r => {
+                    (r.activities || []).forEach(a => {
+                        const cat = a.category in categorySavings ? a.category : '기타';
+                        categorySavings[cat] += (a.savingKg || 0);
+                    });
+                });
+                const total = Object.values(categorySavings).reduce((a, b) => a + b, 0);
+                const categories = [
+                    { label: '이동', val: categorySavings['이동'], color: '#2E7D32', icon: 'fa-bicycle' },
+                    { label: '식사', val: categorySavings['식사'], color: '#4CAF50', icon: 'fa-bowl-rice' },
+                    { label: '전자기기', val: categorySavings['전자기기'], color: '#81C784', icon: 'fa-plug' },
+                    { label: '일회용품', val: categorySavings['일회용품'], color: '#FFB74D', icon: 'fa-cup-straw' },
+                    { label: '기타', val: categorySavings['기타'], color: '#90A4AE', icon: 'fa-ellipsis' }
+                ].map(cat => ({
+                    ...cat,
+                    pct: total > 0 ? Math.round((cat.val / total) * 100) : 0
+                }));
+                return { donutCategories: categories, totalCategorySavings: total };
+            }, [records]);
+
+            // 12. 성장 레벨 및 경험치 동적 계산
+            const growthState = useMemo(() => {
+                if (totalSavingsAll < 5.0) {
+                    return {
+                        userLevel: 1,
+                        levelName: '초록 씨앗',
+                        levelIcon: '🌱',
+                        nextLevelKg: 5.0,
+                        levelExpPct: Math.min(100, Math.round((totalSavingsAll / 5.0) * 100)),
+                        remainingKg: Math.max(0, Math.round((5.0 - totalSavingsAll) * 100) / 100)
+                    };
+                } else if (totalSavingsAll < 15.0) {
+                    return {
+                        userLevel: 2,
+                        levelName: '파릇 새싹',
+                        levelIcon: '🌿',
+                        nextLevelKg: 15.0,
+                        levelExpPct: Math.min(100, Math.round(((totalSavingsAll - 5.0) / 10.0) * 100)),
+                        remainingKg: Math.max(0, Math.round((15.0 - totalSavingsAll) * 100) / 100)
+                    };
+                } else if (totalSavingsAll < 35.0) {
+                    return {
+                        userLevel: 3,
+                        levelName: '어린 나무',
+                        levelIcon: '🌳',
+                        nextLevelKg: 35.0,
+                        levelExpPct: Math.min(100, Math.round(((totalSavingsAll - 15.0) / 20.0) * 100)),
+                        remainingKg: Math.max(0, Math.round((35.0 - totalSavingsAll) * 100) / 100)
+                    };
+                } else {
+                    return {
+                        userLevel: 4,
+                        levelName: '울창한 숲',
+                        levelIcon: '🌲',
+                        nextLevelKg: 100.0,
+                        levelExpPct: Math.min(100, Math.round(((totalSavingsAll - 35.0) / 65.0) * 100)),
+                        remainingKg: Math.max(0, Math.round((100.0 - totalSavingsAll) * 100) / 100)
+                    };
+                }
+            }, [totalSavingsAll]);
+
+            // 13. 나의 배지 동적 달성 판별
+            const badges = useMemo(() => [
+                {
+                    id: 'first_record',
+                    title: '첫 발걸음',
+                    tag: '첫 기록',
+                    desc: '친환경 일기 첫 작성 완료',
+                    icon: 'fa-shoe-prints',
+                    unlocked: records.length >= 1,
+                    color: 'from-emerald-400 to-green-500',
+                    progress: `${Math.min(1, records.length)} / 1`
+                },
+                {
+                    id: 'streak_3',
+                    title: '작심삼일 탈출',
+                    tag: '3일 연속',
+                    desc: '3일 연속 실천 일기 달성',
+                    icon: 'fa-fire',
+                    unlocked: streakDays >= 3,
+                    color: 'from-amber-400 to-amber-500',
+                    progress: `${Math.min(3, streakDays)} / 3 일`
+                },
+                {
+                    id: 'streak_7',
+                    title: '탄소지킴이',
+                    tag: '7일 달성',
+                    desc: '7일 연속 친환경 일기 기록 달성',
+                    icon: 'fa-shield-halved',
+                    unlocked: streakDays >= 7,
+                    color: 'from-amber-500 to-orange-500',
+                    progress: `${Math.min(7, streakDays)} / 7 일`
+                },
+                {
+                    id: 'ten_actions',
+                    title: '환경특별관',
+                    tag: '10회 실천',
+                    desc: '친환경 실천 누적 10회 돌파',
+                    icon: 'fa-crown',
+                    unlocked: totalActionCount >= 10,
+                    color: 'from-purple-500 to-indigo-600',
+                    progress: `${Math.min(10, totalActionCount)} / 10 회`
+                },
+                {
+                    id: 'tree_grower',
+                    title: '작은 숲 가꾸기',
+                    tag: '소나무 1그루',
+                    desc: '누적 6.6kg CO₂ 절감 달성',
+                    icon: 'fa-tree',
+                    unlocked: totalSavingsAll >= 6.6,
+                    color: 'from-emerald-500 to-green-600',
+                    progress: `${Math.min(6.6, totalSavingsAll)} / 6.6 kg`
+                },
+                {
+                    id: 'eco_champion',
+                    title: '지구 수호자',
+                    tag: '20kg 달성',
+                    desc: '누적 20kg CO₂ 절감 달성',
+                    icon: 'fa-earth-asia',
+                    unlocked: totalSavingsAll >= 20.0,
+                    color: 'from-blue-500 to-cyan-600',
+                    progress: `${Math.min(20.0, totalSavingsAll)} / 20 kg`
+                }
+            ], [records.length, streakDays, totalActionCount, totalSavingsAll]);
+
+            // 샘플 데이터 불러오기
+            const handleLoadDemoData = () => {
+                setRecords(SAMPLE_DEMO_RECORDS);
+                localStorage.setItem('greenday_records', JSON.stringify(SAMPLE_DEMO_RECORDS));
+                setIsProfileOpen(false);
+                showToast('시안 예시 데이터가 복원되었습니다.');
+            };
+
+            // 전체 데이터 초기화 (완전 템플릿 상태)
+            const handleResetData = () => {
+                if (confirm('모든 기록을 삭제하고 초기 템플릿 상태로 돌아가시겠습니까?')) {
+                    setRecords([]);
+                    localStorage.removeItem('greenday_records');
+                    setIsProfileOpen(false);
+                    showToast('모든 기록이 초기화되었습니다. 깨끗한 템플릿 상태입니다.');
+                }
+            };
+
+            return (
+                <div class="min-h-screen flex flex-col bg-[#F4FBF7]">
+                    {/* 상단 알림 토스트 */}
+                    {notificationMsg && (
+                        <div class="fixed top-5 right-5 z-50 bg-emerald-800 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-bounce text-sm">
+                            <i class="fa-solid fa-circle-check text-emerald-300"></i>
+                            <span>{notificationMsg}</span>
+                        </div>
+                    )}
+
+                    {/* 상단 검색 모달 */}
+                    <SearchModal 
+                        isOpen={isSearchOpen}
+                        onClose={() => setIsSearchOpen(false)}
+                        records={records}
+                        onSelectRecord={(dateStr) => {
+                            setDiarySelectedDate(dateStr);
+                            setActiveTab('diary');
+                        }}
+                        onSelectGlobal={(countryKey) => {
+                            setActiveTab('global');
+                        }}
+                    />
+
+                    {/* 내 프로필 모달/드로어 */}
+                    <ProfileModal 
+                        isOpen={isProfileOpen}
+                        onClose={() => setIsProfileOpen(false)}
+                        username={username}
+                        setUsername={setUsername}
+                        userAvatar={userAvatar}
+                        setUserAvatar={setUserAvatar}
+                        totalSavingsAll={totalSavingsAll}
+                        pineTrees={pineTrees}
+                        streakDays={streakDays}
+                        totalActionCount={totalActionCount}
+                        userLevel={growthState.userLevel}
+                        levelName={growthState.levelName}
+                        levelExpPct={growthState.levelExpPct}
+                        onResetData={handleResetData}
+                        onLoadDemoData={handleLoadDemoData}
+                    />
+
+                    {/* 상단 레이아웃 헤더 */}
+                    <header class="bg-white border-b border-emerald-100/80 sticky top-0 z-40 shadow-xs">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                            {/* 로고 영역 */}
+                            <div class="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-green-500 flex items-center justify-center text-white text-xl shadow-sm">
+                                    <i class="fa-solid fa-leaf"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xl font-black text-emerald-800 tracking-tight">Green Day</span>
+                                        <span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                                            친환경 탄소 다이어리
+                                        </span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 font-medium">탄소 절감 및 글로벌 탄소 데이터 플랫폼</p>
+                                </div>
+                            </div>
+
+                            {/* 우측 도구: 검색창/아이콘 클릭 인터랙션 & 내 프로필 클릭 인터랙션 */}
+                            <div class="flex items-center gap-3">
+                                {/* 검색 클릭 버튼 */}
+                                <div 
+                                    onClick={() => setIsSearchOpen(true)}
+                                    class="flex items-center bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs text-slate-500 cursor-pointer transition shadow-xs"
+                                    title="검색창 열기"
+                                >
+                                    <i class="fa-solid fa-magnifying-glass text-emerald-600 mr-2"></i>
+                                    <span class="hidden sm:inline text-slate-600">기록 및 데이터 검색...</span>
+                                    <kbd class="hidden sm:inline-block ml-3 px-1.5 py-0.5 text-[9px] bg-white border border-slate-200 rounded text-slate-400 font-mono">Ctrl+K</kbd>
+                                </div>
+
+                                {/* 알림 버튼 */}
+                                <button 
+                                    onClick={() => showToast('새로운 친환경 상식이 업데이트되었습니다!')}
+                                    class="w-9 h-9 rounded-xl border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-emerald-700 hover:border-emerald-200 transition relative cursor-pointer"
+                                    title="알림 확인"
+                                >
+                                    <i class="fa-regular fa-bell text-sm"></i>
+                                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+                                </button>
+
+                                {/* 내 프로필 클릭 버튼 (인터랙션 추가) */}
+                                <div 
+                                    onClick={() => setIsProfileOpen(true)}
+                                    class="flex items-center gap-2 pl-2 border-l border-slate-200 cursor-pointer group hover:opacity-90 transition"
+                                    title="내 프로필 및 친환경 설정 열기"
+                                >
+                                    <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-base ring-2 ring-emerald-300 group-hover:scale-105 transition shadow-xs">
+                                        {userAvatar}
+                                    </div>
+                                    <div class="hidden md:block text-left">
+                                        <span class="text-xs font-bold text-slate-700 block leading-tight group-hover:text-emerald-800 transition">
+                                            {username}
+                                        </span>
+                                        <span class="text-[10px] text-emerald-600 font-semibold">
+                                            Lv.{growthState.userLevel} {growthState.levelName}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* 메인 랩퍼: 좌측 사이드바 + 우측 탭 컨텐츠 */}
+                    <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-grow flex flex-col md:flex-row gap-6">
+                        {/* 데스크탑 사이드바 네비게이션 */}
+                        <aside class="w-full md:w-60 shrink-0">
+                            <nav class="bg-white rounded-2xl p-3 shadow-sm border border-emerald-100/80 space-y-1 sticky top-22">
+                                <SidebarBtn 
+                                    active={activeTab === 'home'} 
+                                    onClick={() => setActiveTab('home')}
+                                    icon="fa-house" 
+                                    title="홈" 
+                                    sub="Home" 
+                                    badge="기본"
+                                />
+                                <SidebarBtn 
+                                    active={activeTab === 'diary'} 
+                                    onClick={() => setActiveTab('diary')}
+                                    icon="fa-calendar-check" 
+                                    title="다이어리" 
+                                    sub="Diary" 
+                                    badge={`${records.length}건`}
+                                />
+                                <SidebarBtn 
+                                    active={activeTab === 'stats'} 
+                                    onClick={() => setActiveTab('stats')}
+                                    icon="fa-chart-pie" 
+                                    title="통계" 
+                                    sub="Statistics" 
+                                    badge="분석"
+                                />
+                                <SidebarBtn 
+                                    active={activeTab === 'global'} 
+                                    onClick={() => setActiveTab('global')}
+                                    icon="fa-earth-asia" 
+                                    title="글로벌 데이터" 
+                                    sub="Global Data" 
+                                    badge="OWID"
+                                />
+                                <SidebarBtn 
+                                    active={activeTab === 'growth'} 
+                                    onClick={() => setActiveTab('growth')}
+                                    icon="fa-lightbulb" 
+                                    title="나의 성장" 
+                                    sub="My Growth" 
+                                    badge={`Lv.${growthState.userLevel}`}
+                                />
+
+                                {/* 사이드바 하단 미니 마스코트 카드 */}
+                                <div class="mt-6 pt-4 border-t border-slate-100 p-3 bg-emerald-50/60 rounded-xl text-center">
+                                    <div class="text-2xl mb-1">{userAvatar}</div>
+                                    <p class="text-xs font-bold text-emerald-900">지구를 지키는 한 걸음</p>
+                                    <p class="text-[11px] text-emerald-700/80 mt-1 leading-snug">
+                                        {totalSavingsAll > 0 
+                                            ? `지금까지 ${totalSavingsAll.toFixed(1)}kg의 탄소를 아꼈어요!` 
+                                            : "오늘 하루 작은 친환경 실천을 기록해보세요!"}
+                                    </p>
+                                </div>
+                            </nav>
+                        </aside>
+
+                        {/* 우측 탭 본문 영역 */}
+                        <main class="flex-1 min-w-0">
+                            {activeTab === 'home' && (
+                                <HomeTab 
+                                    todaySaving={todaySaving}
+                                    yesterdaySaving={yesterdaySaving}
+                                    diffWithYesterday={diffWithYesterday}
+                                    thisWeekSavings={thisWeekSavings}
+                                    totalActionCount={totalActionCount}
+                                    streakDays={streakDays}
+                                    onNavigateDiary={() => setActiveTab('diary')}
+                                    onNavigateGlobal={() => setActiveTab('global')}
+                                />
+                            )}
+
+                            {activeTab === 'diary' && (
+                                <DiaryTab 
+                                    records={records}
+                                    setRecords={setRecords}
+                                    showToast={showToast}
+                                    selectedDate={diarySelectedDate}
+                                    setSelectedDate={setDiarySelectedDate}
+                                />
+                            )}
+
+                            {activeTab === 'stats' && (
+                                <StatsTab 
+                                    records={records}
+                                    thisMonthSavings={thisMonthSavings}
+                                    thisWeekSavings={thisWeekSavings}
+                                    totalSavingsAll={totalSavingsAll}
+                                    streakDays={streakDays}
+                                    mostFrequentAction={mostFrequentAction}
+                                    maxActionCount={maxActionCount}
+                                    dailyData={dailyData}
+                                    donutCategories={donutCategories}
+                                    totalCategorySavings={totalCategorySavings}
+                                    pineTrees={pineTrees}
+                                />
+                            )}
+
+                            {activeTab === 'global' && (
+                                <GlobalDataTab />
+                            )}
+
+                            {activeTab === 'growth' && (
+                                <MyGrowthTab 
+                                    userLevel={growthState.userLevel}
+                                    levelName={growthState.levelName}
+                                    levelIcon={growthState.levelIcon}
+                                    levelExpPct={growthState.levelExpPct}
+                                    remainingKg={growthState.remainingKg}
+                                    streakDays={streakDays}
+                                    badges={badges}
+                                    totalSavingsAll={totalSavingsAll}
+                                />
+                            )}
+                        </main>
+                    </div>
+
+                    {/* 하단 푸터 */}
+                    <footer class="bg-white border-t border-emerald-100/70 py-6 text-center text-xs text-slate-400 mt-12">
+                        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-emerald-700">🌱 Green Day</span>
+                                <span>- 친환경 탄소 절감 및 글로벌 탄소 데이터 플랫폼</span>
+                            </div>
+                            <div class="flex gap-4 text-slate-400">
+                                <span>기후변화행동지침 기준 산정</span>
+                                <span>•</span>
+                                <span>Our World in Data (OWID) CO₂ & GHG Metrics</span>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        // 검색 모달 컴포넌트
+        function SearchModal({ isOpen, onClose, records, onSelectRecord, onSelectGlobal }) {
+            const [query, setQuery] = useState('');
+            if (!isOpen) return null;
+
+            const filteredRecords = query.trim() ? records.filter(r => 
+                (r.diary && r.diary.toLowerCase().includes(query.toLowerCase())) ||
+                (r.date && r.date.includes(query)) ||
+                (r.activities && r.activities.some(a => a.content && a.content.toLowerCase().includes(query.toLowerCase())))
+            ) : [];
+
+            const filteredGlobal = query.trim() ? OWID_GLOBAL_EMISSIONS.filter(c =>
+                c.nameKo.includes(query) || c.country.toLowerCase().includes(query.toLowerCase())
+            ) : [];
+
+            return (
+                <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-start justify-center pt-16 px-4 animate-fade-in" onClick={onClose}>
+                    <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-emerald-100 overflow-hidden" onClick={e => e.stopPropagation()}>
+                        {/* 검색 입력창 */}
+                        <div class="p-4 border-b border-slate-100 flex items-center gap-3">
+                            <i class="fa-solid fa-magnifying-glass text-emerald-600 text-lg"></i>
+                            <input 
+                                type="text" 
+                                autoFocus
+                                value={query}
+                                onChange={e => setQuery(e.target.value)}
+                                placeholder="다이어리 일기, 날짜(YYYY-MM-DD), 실천 행동, 국가 검색..."
+                                class="flex-1 bg-transparent border-none outline-none text-sm text-slate-800 placeholder-slate-400"
+                            />
+                            {query && (
+                                <button onClick={() => setQuery('')} class="text-slate-400 hover:text-slate-600 text-xs p-1">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            )}
+                            <button onClick={onClose} class="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 py-1 rounded-lg bg-slate-100 cursor-pointer">
+                                닫기 ESC
+                            </button>
+                        </div>
+
+                        {/* 추천 검색 태그 */}
+                        <div class="px-4 py-2.5 bg-slate-50/70 border-b border-slate-100 flex items-center gap-2 overflow-x-auto text-[11px]">
+                            <span class="text-slate-400 font-semibold shrink-0">추천 검색:</span>
+                            {['자전거', '텀블러', '채식', '한국', '미국', '1인당', '가스'].map(tag => (
+                                <button 
+                                    key={tag}
+                                    onClick={() => setQuery(tag)}
+                                    class="px-2.5 py-1 bg-white border border-slate-200 rounded-full text-slate-600 hover:border-emerald-400 hover:text-emerald-700 font-medium transition shrink-0 cursor-pointer"
+                                >
+                                    #{tag}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* 검색 결과 목록 */}
+                        <div class="max-h-96 overflow-y-auto p-4 space-y-4">
+                            {!query.trim() ? (
+                                <div class="py-8 text-center text-slate-400 text-xs">
+                                    <i class="fa-regular fa-compass text-3xl mb-2 text-slate-300"></i>
+                                    <p>궁금한 날짜나 활동, 또는 글로벌 데이터를 검색해보세요.</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* 나의 다이어리 결과 */}
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1.5">
+                                            <i class="fa-solid fa-book-bookmark text-emerald-600"></i>
+                                            나의 다이어리 기록 ({filteredRecords.length}건)
+                                        </h4>
+                                        {filteredRecords.length === 0 ? (
+                                            <p class="text-xs text-slate-400 py-1">일치하는 다이어리 기록이 없습니다.</p>
+                                        ) : (
+                                            <div class="space-y-2">
+                                                {filteredRecords.map(r => (
+                                                    <div 
+                                                        key={r.id} 
+                                                        onClick={() => { onSelectRecord(r.date); onClose(); }}
+                                                        class="p-3 bg-emerald-50/40 hover:bg-emerald-50 rounded-xl border border-emerald-100 cursor-pointer transition flex items-start justify-between"
+                                                    >
+                                                        <div>
+                                                            <div class="flex items-center gap-2 mb-1">
+                                                                <span class="font-bold text-xs text-slate-800">{r.date}</span>
+                                                                <span class="text-xs">{r.mood}</span>
+                                                                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                                                                    -{r.totalSavingKg.toFixed(2)} kg CO₂
+                                                                </span>
+                                                            </div>
+                                                            <p class="text-xs text-slate-600 line-clamp-2">{r.diary || '일기 내용 없음'}</p>
+                                                            <div class="mt-1 flex flex-wrap gap-1">
+                                                                {(r.activities || []).map(a => (
+                                                                    <span key={a.id} class="text-[10px] bg-white border border-slate-200 px-1.5 py-0.2 rounded text-slate-500">
+                                                                        {a.content}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <i class="fa-solid fa-chevron-right text-slate-400 text-xs mt-1"></i>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* 글로벌 데이터 일치 결과 */}
+                                    <div class="pt-2 border-t border-slate-100">
+                                        <h4 class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1.5">
+                                            <i class="fa-solid fa-earth-americas text-blue-600"></i>
+                                            글로벌 탄소 데이터 ({filteredGlobal.length}건)
+                                        </h4>
+                                        {filteredGlobal.length === 0 ? (
+                                            <p class="text-xs text-slate-400 py-1">일치하는 글로벌 데이터가 없습니다.</p>
+                                        ) : (
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {filteredGlobal.map(c => (
+                                                    <div 
+                                                        key={c.country}
+                                                        onClick={() => { onSelectGlobal(c.country); onClose(); }}
+                                                        class="p-2.5 bg-blue-50/40 hover:bg-blue-50 rounded-xl border border-blue-100 cursor-pointer transition flex items-center justify-between"
+                                                    >
+                                                        <div>
+                                                            <span class="text-xs font-bold text-slate-800">{c.nameKo} ({c.country})</span>
+                                                            <span class="block text-[10px] text-slate-500">배출량: {c.emissionsMt.toLocaleString()} Mt / 1인당 {c.perCapitaT}t</span>
+                                                        </div>
+                                                        <i class="fa-solid fa-arrow-right text-blue-400 text-xs"></i>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 내 프로필 및 환경 설정 모달 컴포넌트
+        function ProfileModal({ isOpen, onClose, username, setUsername, userAvatar, setUserAvatar, totalSavingsAll, pineTrees, streakDays, totalActionCount, userLevel, levelName, levelExpPct, onResetData, onLoadDemoData }) {
+            const [editingName, setEditingName] = useState(username);
+            if (!isOpen) return null;
+
+            const avatars = ['🌱', '🌿', '🌳', '🌍', '🍃', '☀️'];
+
+            const handleSaveName = () => {
+                if (!editingName.trim()) return;
+                setUsername(editingName.trim());
+                localStorage.setItem('greenday_username', editingName.trim());
+                alert('닉네임이 저장되었습니다.');
+            };
+
+            const handleSelectAvatar = (av) => {
+                setUserAvatar(av);
+                localStorage.setItem('greenday_avatar', av);
+            };
+
+            return (
+                <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
+                    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-emerald-100 p-6 space-y-5 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                        {/* 헤더 */}
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 class="font-black text-slate-800 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-user-gear text-emerald-600"></i> 내 프로필 & 친환경 설정
+                            </h3>
+                            <button onClick={onClose} class="text-slate-400 hover:text-slate-600 text-sm cursor-pointer">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        {/* 프로필 아바타 & 닉네임 수정 */}
+                        <div class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 flex items-center gap-4">
+                            <div class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-emerald-200 flex items-center justify-center text-3xl shrink-0">
+                                {userAvatar}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <input 
+                                        type="text"
+                                        value={editingName}
+                                        onChange={e => setEditingName(e.target.value)}
+                                        class="w-32 px-2 py-1 text-xs font-bold bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500"
+                                    />
+                                    <button 
+                                        onClick={handleSaveName}
+                                        class="px-2.5 py-1 text-xs font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition cursor-pointer"
+                                    >
+                                        저장
+                                    </button>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-[10px] text-emerald-800 font-semibold">
+                                    <span class="bg-emerald-200/80 px-2 py-0.5 rounded-full">Lv.{userLevel}</span>
+                                    <span>{levelName}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 아바타 선택기 */}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">캐릭터 아바타 변경</label>
+                            <div class="flex gap-2">
+                                {avatars.map(av => (
+                                    <button
+                                        key={av}
+                                        onClick={() => handleSelectAvatar(av)}
+                                        class={`w-10 h-10 rounded-xl text-xl flex items-center justify-center border transition cursor-pointer ${
+                                            userAvatar === av 
+                                                ? 'border-emerald-600 bg-emerald-100 ring-2 ring-emerald-300 scale-105' 
+                                                : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                                        }`}
+                                    >
+                                        {av}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 실시간 환경 기여 지표 */}
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-slate-700">실시간 환경 기여 통계 (실제 입력 반영)</label>
+                            <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <span class="text-[10px] text-slate-400 block">누적 탄소 절감</span>
+                                    <span class="text-base font-black text-emerald-700">{totalSavingsAll.toFixed(2)} kg</span>
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <span class="text-[10px] text-slate-400 block">소나무 식재 효과</span>
+                                    <span class="text-base font-black text-slate-700">약 {pineTrees}그루</span>
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <span class="text-[10px] text-slate-400 block">연속 기록일</span>
+                                    <span class="text-base font-black text-amber-500">{streakDays}일</span>
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <span class="text-[10px] text-slate-400 block">총 실천 횟수</span>
+                                    <span class="text-base font-black text-slate-700">{totalActionCount}회</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 데이터 관리 액션 (시안 예시 불러오기 / 템플릿 초기화) */}
+                        <div class="pt-3 border-t border-slate-100 space-y-2">
+                            <label class="block text-xs font-bold text-slate-700">데이터 관리 및 템플릿</label>
+                            <div class="flex flex-col gap-2">
+                                <button
+                                    onClick={onLoadDemoData}
+                                    class="w-full py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    <i class="fa-solid fa-wand-magic-sparkles text-emerald-600"></i>
+                                    <span>💡 시안 예시 데이터 불러오기 (샘플 복원)</span>
+                                </button>
+                                <button
+                                    onClick={onResetData}
+                                    class="w-full py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    <i class="fa-regular fa-trash-can text-rose-500"></i>
+                                    <span>🗑️ 모든 기록 초기화 (템플릿 상태로 시작)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 사이드바 버튼 컴포넌트
+        function SidebarBtn({ active, onClick, icon, title, sub, badge }) {
+            return (
+                <button 
+                    onClick={onClick}
+                    class={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left transition-all font-medium text-sm ${
+                        active 
+                            ? 'bg-emerald-600 text-white shadow-sm font-bold' 
+                            : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-800'
+                    }`}
+                >
+                    <div class="flex items-center gap-3">
+                        <div class={`w-7 h-7 rounded-lg flex items-center justify-center text-sm ${
+                            active ? 'bg-emerald-700/60 text-white' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                            <i class={`fa-solid ${icon}`}></i>
+                        </div>
+                        <div>
+                            <span class="block leading-tight">{title}</span>
+                            <span class={`text-[10px] block ${active ? 'text-emerald-100' : 'text-slate-400'}`}>{sub}</span>
+                        </div>
+                    </div>
+                    {badge && (
+                        <span class={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                            active ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                        }`}>
+                            {badge}
+                        </span>
+                    )}
+                </button>
+            );
+        }
+
+        /* ========================================================
+           TAB 1: 🏠 홈 (Home)
+           ======================================================== */
+        function HomeTab({ todaySaving, yesterdaySaving, diffWithYesterday, thisWeekSavings, totalActionCount, streakDays, onNavigateDiary, onNavigateGlobal }) {
+            return (
+                <div class="space-y-6">
+                    {/* 상단 배너: Sprout / Earth 마스코트 헤더 */}
+                    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-100 via-green-100 to-emerald-50 p-6 sm:p-8 border border-emerald-200/70 shadow-xs">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+                            <div class="space-y-2">
+                                <div class="inline-flex items-center gap-2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-xs">
+                                    <span>🌱 지구의 날 365일 실천</span>
+                                </div>
+                                <h1 class="text-2xl sm:text-3xl font-black text-emerald-950 tracking-tight leading-snug">
+                                    "안녕! 오늘도 지구가 만드는<br class="hidden sm:inline"/> 작은 실천을 해볼까??"
+                                </h1>
+                                <p class="text-xs sm:text-sm text-emerald-800/80 font-medium">
+                                    매일 작성하는 작은 다이어리가 모여 지구를 지키는 거대한 숲이 됩니다.
+                                </p>
+                            </div>
+                            <div class="w-20 h-20 sm:w-24 sm:h-24 bg-white/80 rounded-2xl p-2 shadow-sm border border-emerald-200 flex items-center justify-center text-4xl sm:text-5xl shrink-0 animate-pulse">
+                                🌍🌱
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 상단 3대 핵심 통계 카드 (Top Stat Cards - 실제 입력 데이터 기반) */}
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {/* 1. 오늘의 탄소 절감량 */}
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100/90 relative overflow-hidden">
+                            <div class="flex items-center justify-between text-slate-500 text-xs font-semibold mb-2">
+                                <span>오늘의 탄소 절감량</span>
+                                <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                                </span>
+                            </div>
+                            <div class="text-3xl font-black text-emerald-700 tracking-tight">
+                                {todaySaving.toFixed(2)} <span class="text-lg font-bold text-slate-600">kg CO₂</span>
+                            </div>
+                            <div class="mt-3 flex items-center gap-1.5 text-xs text-emerald-600 font-medium bg-emerald-50 px-2.5 py-1 rounded-lg w-fit">
+                                <i class={`fa-solid ${todaySaving >= yesterdaySaving ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'}`}></i>
+                                <span>
+                                    {todaySaving > 0 
+                                        ? (diffWithYesterday >= 0 
+                                            ? `어제보다 ${diffWithYesterday.toFixed(2)}kg 더 줄였어요!` 
+                                            : `어제보다 ${Math.abs(diffWithYesterday).toFixed(2)}kg 덜 줄였어요`)
+                                        : "오늘 첫 친환경 기록을 남겨보세요!"}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* 2. 이번 주 누적 절감량 */}
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100/90 relative overflow-hidden">
+                            <div class="flex items-center justify-between text-slate-500 text-xs font-semibold mb-2">
+                                <span>이번 주 누적 절감량</span>
+                                <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-chart-column"></i>
+                                </span>
+                            </div>
+                            <div class="text-3xl font-black text-slate-800 tracking-tight">
+                                {thisWeekSavings.toFixed(2)} <span class="text-lg font-bold text-slate-600">kg CO₂</span>
+                            </div>
+                            <div class="mt-3 flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                <span>소나무 약 {(thisWeekSavings / 6.6).toFixed(1)}그루 식재 효과</span>
+                            </div>
+                        </div>
+
+                        {/* 3. 총 실천 횟수 */}
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100/90 relative overflow-hidden">
+                            <div class="flex items-center justify-between text-slate-500 text-xs font-semibold mb-2">
+                                <span>총 실천 횟수</span>
+                                <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-leaf"></i>
+                                </span>
+                            </div>
+                            <div class="text-3xl font-black text-slate-800 tracking-tight">
+                                {totalActionCount} <span class="text-lg font-bold text-slate-600">회</span>
+                            </div>
+                            <div class="mt-3 flex items-center gap-1.5 text-xs text-amber-600 font-semibold bg-amber-50 px-2.5 py-1 rounded-lg w-fit">
+                                <i class="fa-solid fa-fire"></i>
+                                <span>{streakDays > 0 ? `${streakDays}일 연속 기록 이어가는 중!` : "기록을 시작하고 스트릭을 쌓아보세요!"}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 하단 듀얼 인터랙티브 카드 (Bottom Dual Cards) */}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        {/* 오늘의 다이어리 카드 */}
+                        <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 flex flex-col justify-between hover:border-emerald-300 transition group">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <span class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md mb-3 border border-emerald-100">
+                                        <i class="fa-solid fa-pen-nib"></i> 오늘의 다이어리
+                                    </span>
+                                    <h3 class="text-lg font-bold text-slate-800 group-hover:text-emerald-700 transition">
+                                        오늘 어떤 일들이 있었나요?
+                                    </h3>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                        작은 습관 하나도 괜찮아요. 지금까지의 일상을 편하게 기록해보세요!
+                                    </p>
+                                </div>
+                                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition">
+                                    ✏️
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                                <button 
+                                    onClick={onNavigateDiary}
+                                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
+                                >
+                                    <span>기록하기</span>
+                                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 오늘의 지구 이야기 카드 */}
+                        <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 flex flex-col justify-between hover:border-emerald-300 transition group">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <span class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md mb-3 border border-blue-100">
+                                        <i class="fa-solid fa-earth-americas"></i> 오늘의 지구 이야기
+                                    </span>
+                                    <h3 class="text-lg font-bold text-slate-800 group-hover:text-emerald-700 transition">
+                                        세계의 탄소 배출량, 얼마나 될까?
+                                    </h3>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                        OWID 공공 데이터를 바탕으로 국가별 탄소와 1인당 가스 배출량을 비교해보세요.
+                                    </p>
+                                </div>
+                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition">
+                                    🌐
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                                <button 
+                                    onClick={onNavigateGlobal}
+                                    class="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
+                                >
+                                    <span>데이터 보러가기 →</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 일상 속 에코 팁 박스 */}
+                    <div class="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-4 flex items-center gap-3">
+                        <span class="text-2xl">💡</span>
+                        <div class="text-xs">
+                            <span class="font-bold text-emerald-950">오늘의 지구 상식: </span>
+                            <span class="text-emerald-900/80">하루 10km를 자동차 대신 자전거로 이동하면 연간 약 240kg의 CO₂ 배출을 줄일 수 있습니다!</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        /* ========================================================
+           TAB 2: 🗓 다이어리 (Diary)
+           ======================================================== */
+        function DiaryTab({ records, setRecords, showToast, selectedDate: propSelectedDate, setSelectedDate: propSetSelectedDate }) {
+            const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+            const [localDate, setLocalDate] = useState(propSelectedDate || todayStr);
+            const selectedDate = propSelectedDate !== undefined ? propSelectedDate : localDate;
+            const setSelectedDate = propSetSelectedDate || setLocalDate;
+
+            const [diaryNote, setDiaryNote] = useState('');
+            const [mood, setMood] = useState('😄');
+            const [activities, setActivities] = useState([
+                { id: '1', category: '이동', content: '', amount: 1, unit: '회', factor: 0.1 }
+            ]);
+            const [viewMode, setViewMode] = useState('write'); // 'write' or 'calendar'
+
+            // 날짜 변경 시 기존 기록 불러오기
+            useEffect(() => {
+                const found = records.find(r => r.date === selectedDate);
+                if (found) {
+                    setDiaryNote(found.diary || '');
+                    setMood(found.mood || '😄');
+                    if (found.activities && found.activities.length > 0) {
+                        setActivities(found.activities.map(a => ({
+                            id: a.id || Math.random().toString(),
+                            category: a.category || '기타',
+                            content: a.content || '',
+                            amount: a.amount || 1,
+                            unit: a.unit || '회',
+                            factor: (a.savingKg && a.amount) ? (a.savingKg / a.amount) : 0.1
+                        })));
+                    }
+                } else {
+                    setDiaryNote('');
+                    setMood('😄');
+                    setActivities([
+                        { id: Date.now().toString(), category: '이동', content: '', amount: 1, unit: '회', factor: 0.1 }
+                    ]);
+                }
+            }, [selectedDate, records]);
+
+            // 기분 이모지 옵션 5가지
+            const moods = [
+                { emoji: '😄', label: '매우 좋음' },
+                { emoji: '🙂', label: '좋음' },
+                { emoji: '😐', label: '보통' },
+                { emoji: '🙁', label: '조금 아쉬움' },
+                { emoji: '😫', label: '힘듦' }
+            ];
+
+            // 항목 추가
+            const handleAddActivity = () => {
+                const newAct = {
+                    id: Date.now().toString(),
+                    category: '일회용품',
+                    content: '개인 텀블러 사용',
+                    amount: 1,
+                    unit: '회',
+                    factor: 0.10
+                };
+                setActivities([...activities, newAct]);
+            };
+
+            // 항목 삭제
+            const handleDeleteActivity = (id) => {
+                if (activities.length === 1) {
+                    showToast('최소 한 개의 실천 항목이 필요합니다.');
+                    return;
+                }
+                setActivities(activities.filter(a => a.id !== id));
+            };
+
+            // 항목 필드 변경
+            const handleActivityChange = (id, field, value) => {
+                setActivities(activities.map(a => {
+                    if (a.id === id) {
+                        const updated = { ...a, [field]: value };
+                        // 프리셋 선택 시 factor 자동 설정
+                        if (field === 'preset') {
+                            const foundPreset = ACTIVITY_PRESETS.find(p => p.label === value);
+                            if (foundPreset) {
+                                updated.category = foundPreset.category;
+                                updated.content = foundPreset.defaultContent;
+                                updated.unit = foundPreset.unit;
+                                updated.factor = foundPreset.factor;
+                            }
+                        }
+                        return updated;
+                    }
+                    return a;
+                }));
+            };
+
+            // 실시간 예상 절감량 계산
+            const estimatedTotalKg = useMemo(() => {
+                const sum = activities.reduce((acc, a) => {
+                    const amt = parseFloat(a.amount) || 0;
+                    const f = parseFloat(a.factor) || 0;
+                    return acc + (amt * f);
+                }, 0);
+                return Math.round(sum * 100) / 100;
+            }, [activities]);
+
+            // 저장 핸들러
+            const handleSave = (e) => {
+                e.preventDefault();
+                const newEntry = {
+                    id: `rec-${selectedDate.replace(/-/g, '')}`,
+                    date: selectedDate,
+                    mood: mood,
+                    diary: diaryNote,
+                    activities: activities.map(a => ({
+                        id: a.id,
+                        category: a.category,
+                        content: a.content || '친환경 행동 실천',
+                        amount: parseFloat(a.amount) || 1,
+                        unit: a.unit || '회',
+                        savingKg: Math.round(((parseFloat(a.amount) || 1) * (parseFloat(a.factor) || 0.1)) * 100) / 100
+                    })),
+                    totalSavingKg: estimatedTotalKg
+                };
+
+                const existingIndex = records.findIndex(r => r.date === selectedDate);
+                let updatedRecords;
+                if (existingIndex >= 0) {
+                    updatedRecords = [...records];
+                    updatedRecords[existingIndex] = newEntry;
+                } else {
+                    updatedRecords = [newEntry, ...records];
+                }
+
+                setRecords(updatedRecords);
+                showToast(`다이어리가 저장되었습니다! (절감량: +${estimatedTotalKg.toFixed(2)} kg CO₂)`);
+            };
+
+            // 오늘 날짜로 즉시 이동
+            const setToday = () => {
+                const t = new Date().toISOString().slice(0, 10);
+                setSelectedDate(t);
+            };
+
+            return (
+                <div class="space-y-6">
+                    {/* 상단 바 (Top Bar) */}
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-2 text-xs font-semibold text-emerald-700 mb-1">
+                                <i class="fa-solid fa-arrow-left text-[11px]"></i>
+                                <span>다이어리 작성하기</span>
+                            </div>
+                            <h2 class="text-xl font-black text-slate-800">
+                                오늘의 일상을 기록하고, 탄소 절감량을 확인해보세요!
+                            </h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            {/* 뷰 전환 버튼 */}
+                            <div class="bg-slate-100 p-1 rounded-xl flex text-xs font-semibold mr-1">
+                                <button 
+                                    onClick={() => setViewMode('write')}
+                                    class={`px-3 py-1.5 rounded-lg transition ${viewMode === 'write' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}
+                                >
+                                    <i class="fa-solid fa-pen-nib mr-1"></i> 작성
+                                </button>
+                                <button 
+                                    onClick={() => setViewMode('calendar')}
+                                    class={`px-3 py-1.5 rounded-lg transition ${viewMode === 'calendar' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}
+                                >
+                                    <i class="fa-solid fa-calendar-days mr-1"></i> 캘린더
+                                </button>
+                            </div>
+                            {/* 날짜 선택 인풋 */}
+                            <input 
+                                type="date" 
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                class="border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-emerald-500 cursor-pointer shadow-xs"
+                            />
+                            <button 
+                                onClick={setToday}
+                                class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs px-3 py-2 rounded-xl border border-emerald-200 transition cursor-pointer"
+                            >
+                                오늘
+                            </button>
+                        </div>
+                    </div>
+
+                    {viewMode === 'calendar' ? (
+                        /* 캘린더 서브 뷰 */
+                        <CalendarView 
+                            records={records} 
+                            selectedDate={selectedDate} 
+                            onSelectDate={(d) => { setSelectedDate(d); setViewMode('write'); }} 
+                        />
+                    ) : (
+                        /* 다이어리 작성 폼 */
+                        <form onSubmit={handleSave} class="space-y-6">
+                            {/* 기분 셀렉터 (Mood Selector) */}
+                            <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100">
+                                <label class="block text-xs font-bold text-slate-700 mb-3">
+                                    오늘의 기분은 어떤가요?
+                                </label>
+                                <div class="grid grid-cols-5 gap-2 sm:gap-4">
+                                    {moods.map((m) => {
+                                        const isSelected = mood === m.emoji;
+                                        return (
+                                            <button
+                                                type="button"
+                                                key={m.label}
+                                                onClick={() => setMood(m.emoji)}
+                                                class={`p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                                                    isSelected 
+                                                        ? 'border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-200 shadow-xs scale-105' 
+                                                        : 'border-slate-200 hover:border-slate-300 bg-slate-50/40'
+                                                }`}
+                                            >
+                                                <span class="text-2xl sm:text-3xl">{m.emoji}</span>
+                                                <span class={`text-[11px] font-semibold ${isSelected ? 'text-emerald-800' : 'text-slate-500'}`}>
+                                                    {m.label}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 일기 텍스트 박스 (Daily Note Input) */}
+                            <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-xs font-bold text-slate-700">
+                                        오늘의 일기
+                                    </label>
+                                    <span class={`text-[11px] font-medium ${diaryNote.length > 500 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                                        {diaryNote.length}/500
+                                    </span>
+                                </div>
+                                <textarea
+                                    value={diaryNote}
+                                    maxLength={500}
+                                    onChange={(e) => setDiaryNote(e.target.value)}
+                                    rows="4"
+                                    placeholder="오늘 하루 동안 지구를 생각하며 실천했던 소소한 생각이나 일상을 적어보세요..."
+                                    class="w-full border border-slate-200 rounded-xl p-3.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition leading-relaxed resize-none"
+                                ></textarea>
+                            </div>
+
+                            {/* 친환경 활동 입력 폼 (Carbon Reduction Activity Form) */}
+                            <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                            <i class="fa-solid fa-seedling text-emerald-600"></i> 실천한 친환경 활동
+                                        </h3>
+                                        <p class="text-xs text-slate-400 mt-0.5">활동 내용과 수량을 적으면 공식 기준에 따라 감축량이 자동 계산됩니다.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleAddActivity}
+                                        class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-emerald-200 transition flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <i class="fa-solid fa-plus text-[10px]"></i>
+                                        <span>항목 추가</span>
+                                    </button>
+                                </div>
+
+                                {/* 동적 활동 목록 */}
+                                <div class="space-y-3">
+                                    {activities.map((act, idx) => (
+                                        <div key={act.id} class="p-3.5 bg-slate-50/70 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                                            {/* 간편 프리셋 선택 드롭다운 */}
+                                            <div class="w-full sm:w-44 shrink-0">
+                                                <select 
+                                                    onChange={(e) => handleActivityChange(act.id, 'preset', e.target.value)}
+                                                    class="w-full text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-slate-700 focus:outline-none focus:border-emerald-500"
+                                                >
+                                                    <option value="">⚡ 간편 활동 선택</option>
+                                                    {ACTIVITY_PRESETS.map(p => (
+                                                        <option key={p.label} value={p.label}>{p.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* 내용 입력창 */}
+                                            <div class="flex-1">
+                                                <input 
+                                                    type="text"
+                                                    value={act.content}
+                                                    placeholder="예: 집에서 자전거 타고 출퇴근"
+                                                    onChange={(e) => handleActivityChange(act.id, 'content', e.target.value)}
+                                                    class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                                                />
+                                            </div>
+
+                                            {/* 수량 / 거리 / 시간 */}
+                                            <div class="flex items-center gap-1.5 w-full sm:w-32">
+                                                <input 
+                                                    type="number"
+                                                    step="any"
+                                                    min="0"
+                                                    value={act.amount}
+                                                    onChange={(e) => handleActivityChange(act.id, 'amount', e.target.value)}
+                                                    class="w-16 text-xs text-center font-bold bg-white border border-slate-200 rounded-lg px-2 py-2 text-slate-800 focus:outline-none focus:border-emerald-500"
+                                                />
+                                                <span class="text-xs font-semibold text-slate-500">{act.unit || '회'}</span>
+                                            </div>
+
+                                            {/* 개별 감축량 표시 */}
+                                            <div class="w-24 text-right text-xs font-bold text-emerald-700 shrink-0">
+                                                -{((parseFloat(act.amount) || 0) * (parseFloat(act.factor) || 0.1)).toFixed(2)} kg
+                                            </div>
+
+                                            {/* 삭제 버튼 */}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteActivity(act.id)}
+                                                class="text-slate-400 hover:text-rose-500 p-2 text-xs transition cursor-pointer"
+                                                title="항목 삭제"
+                                            >
+                                                <i class="fa-regular fa-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* 하단 총 예상 절감량 & 저장 버튼 바 */}
+                                <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-slate-500 font-semibold">예상 절감량:</span>
+                                        <span class="text-2xl font-black text-emerald-700">
+                                            {estimatedTotalKg.toFixed(2)} <span class="text-sm font-bold text-slate-600">kg CO₂</span>
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-8 py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        <i class="fa-solid fa-floppy-disk text-xs"></i>
+                                        <span>저장하기</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            );
+        }
+
+        // 월간 캘린더 서브 뷰 컴포넌트
+        function CalendarView({ records, selectedDate, onSelectDate }) {
+            const initialYearMonth = useMemo(() => {
+                const base = selectedDate || new Date().toISOString().slice(0, 10);
+                const parts = base.split('-');
+                return { year: parseInt(parts[0], 10), month: parseInt(parts[1], 10) };
+            }, [selectedDate]);
+
+            const [currentYM, setCurrentYM] = useState(initialYearMonth);
+
+            useEffect(() => {
+                if (selectedDate) {
+                    const parts = selectedDate.split('-');
+                    setCurrentYM({ year: parseInt(parts[0], 10), month: parseInt(parts[1], 10) });
+                }
+            }, [selectedDate]);
+
+            const handlePrevMonth = () => {
+                setCurrentYM(prev => {
+                    if (prev.month === 1) return { year: prev.year - 1, month: 12 };
+                    return { year: prev.year, month: prev.month - 1 };
+                });
+            };
+
+            const handleNextMonth = () => {
+                setCurrentYM(prev => {
+                    if (prev.month === 12) return { year: prev.year + 1, month: 1 };
+                    return { year: prev.year, month: prev.month + 1 };
+                });
+            };
+
+            const daysCount = useMemo(() => {
+                return new Date(currentYM.year, currentYM.month, 0).getDate();
+            }, [currentYM]);
+
+            const firstDayIndex = useMemo(() => {
+                return new Date(currentYM.year, currentYM.month - 1, 1).getDay(); // 0 is Sun
+            }, [currentYM]);
+
+            const monthStr = String(currentYM.month).padStart(2, '0');
+            const ymPrefix = `${currentYM.year}-${monthStr}`;
+
+            const recordedDaysMap = useMemo(() => {
+                return records.reduce((acc, cur) => {
+                    if (cur.date && cur.date.startsWith(ymPrefix)) {
+                        const dayNum = parseInt(cur.date.split('-')[2], 10);
+                        acc[dayNum] = cur;
+                    }
+                    return acc;
+                }, {});
+            }, [records, ymPrefix]);
+
+            return (
+                <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <button 
+                                type="button"
+                                onClick={handlePrevMonth} 
+                                class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 text-xs cursor-pointer"
+                                title="이전 달"
+                            >
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <h3 class="font-bold text-slate-800 text-sm">{currentYM.year}년 {currentYM.month}월 실천 캘린더</h3>
+                            <button 
+                                type="button"
+                                onClick={handleNextMonth} 
+                                class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 text-xs cursor-pointer"
+                                title="다음 달"
+                            >
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-slate-500">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 기록 완료</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-200"></span> 미기록</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-2 text-center text-xs">
+                        {['일', '월', '화', '수', '목', '금', '토'].map(d => (
+                            <div key={d} class="font-bold text-slate-400 py-1">{d}</div>
+                        ))}
+                        {Array.from({ length: firstDayIndex }).map((_, i) => (
+                            <div key={`empty-${i}`} class="h-14"></div>
+                        ))}
+                        {Array.from({ length: daysCount }, (_, i) => i + 1).map(day => {
+                            const dateStr = `${ymPrefix}-${String(day).padStart(2, '0')}`;
+                            const isLogged = !!recordedDaysMap[day];
+                            const isSelected = selectedDate === dateStr;
+
+                            return (
+                                <button
+                                    type="button"
+                                    key={day}
+                                    onClick={() => onSelectDate(dateStr)}
+                                    class={`h-14 rounded-xl border flex flex-col items-center justify-between p-1.5 transition text-left cursor-pointer ${
+                                        isSelected 
+                                            ? 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-300' 
+                                            : isLogged 
+                                                ? 'border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50' 
+                                                : 'border-slate-100 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    <span class={`text-[11px] font-bold ${isSelected ? 'text-emerald-800' : 'text-slate-600'}`}>{day}</span>
+                                    {isLogged && (
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-xs">{recordedDaysMap[day].mood || '🌱'}</span>
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        }
+
+        /* ========================================================
+           TAB 3: 📊 통계 (Statistics)
+           ======================================================== */
+        function StatsTab({ records, thisMonthSavings, thisWeekSavings, totalSavingsAll, streakDays, mostFrequentAction, maxActionCount, dailyData, donutCategories, totalCategorySavings, pineTrees }) {
+            const [dateRange, setDateRange] = useState('week');
+
+            // 가장 많이 아낀 카테고리
+            const topCategory = useMemo(() => {
+                if (!donutCategories || donutCategories.length === 0 || totalCategorySavings === 0) return null;
+                const sorted = [...donutCategories].sort((a, b) => b.val - a.val);
+                return sorted[0].val > 0 ? sorted[0] : null;
+            }, [donutCategories, totalCategorySavings]);
+
+            // 일별 차트 최대값 스케일링
+            const maxDailyVal = useMemo(() => {
+                if (!dailyData || dailyData.length === 0) return 0.5;
+                const vals = dailyData.map(d => d.val);
+                const max = Math.max(...vals);
+                return max > 0 ? max * 1.25 : 0.5;
+            }, [dailyData]);
+
+            return (
+                <div class="space-y-6">
+                    {/* 상단 타이틀 및 상태 */}
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800">나의 탄소 절감 통계</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">지금까지의 실천 기록을 실시간으로 분석합니다.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                실시간 동기화 상태
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* 4대 주요 통계 지표 카드 */}
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* 이번 달 절감량 */}
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100 text-center">
+                            <span class="text-xs text-slate-400 font-semibold block mb-1">이번 달 절감량</span>
+                            <div class="text-2xl font-black text-emerald-700">
+                                {thisMonthSavings.toFixed(2)} <span class="text-xs font-bold text-slate-500">kg CO₂</span>
+                            </div>
+                            <span class="text-[10px] text-emerald-600 font-semibold mt-1 inline-block">
+                                {thisMonthSavings > 0 ? '이달 실천 기록 활성' : '이번 달 기록 대기 중'}
+                            </span>
+                        </div>
+                        {/* 총 누적 절감량 */}
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100 text-center">
+                            <span class="text-xs text-slate-400 font-semibold block mb-1">총 누적 절감량</span>
+                            <div class="text-2xl font-black text-slate-800">
+                                {totalSavingsAll.toFixed(2)} <span class="text-xs font-bold text-slate-500">kg CO₂</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 mt-1 inline-block">소나무 약 {pineTrees}그루 효과</span>
+                        </div>
+                        {/* 연속 기록일 */}
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100 text-center">
+                            <span class="text-xs text-slate-400 font-semibold block mb-1">연속 기록일</span>
+                            <div class="text-2xl font-black text-amber-500">
+                                {streakDays} <span class="text-xs font-bold text-slate-500">일</span>
+                            </div>
+                            <span class="text-[10px] text-amber-600 font-semibold mt-1 inline-block">
+                                {streakDays > 0 ? '🔥 스트릭 달성 중' : '첫 기록 도전하기'}
+                            </span>
+                        </div>
+                        {/* 가장 많이 실천한 행동 */}
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100 text-center">
+                            <span class="text-xs text-slate-400 font-semibold block mb-1">가장 많이 실천한 행동</span>
+                            <div class="text-lg sm:text-xl font-black text-emerald-800 truncate px-1" title={mostFrequentAction}>
+                                {mostFrequentAction}
+                            </div>
+                            <span class="text-[10px] text-slate-400 mt-1 inline-block">
+                                {maxActionCount > 0 ? `총 ${maxActionCount}회 실천 완료` : '다이어리 기록 시 반영'}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* 차트 영역: 일별 절감량 막대 차트 + 행동별 도넛 차트 */}
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        {/* 1. 일별 절감량 막대 차트 (최근 7일) */}
+                        <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-chart-simple text-emerald-600"></i> 최근 7일 일별 절감량
+                                    </h3>
+                                    <span class="text-[11px] text-slate-400">단위: kg CO₂</span>
+                                </div>
+                                {/* SVG 막대 차트 */}
+                                <div class="h-52 flex items-end justify-between gap-2 pt-6 pb-2 px-2 border-b border-slate-100">
+                                    {dailyData.map((d) => {
+                                        const heightPct = maxDailyVal > 0 ? Math.min(100, Math.round((d.val / maxDailyVal) * 100)) : 0;
+                                        return (
+                                            <div key={d.date} class="flex-1 flex flex-col items-center gap-2 group relative">
+                                                {/* 호버 툴팁 */}
+                                                <div class="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] py-0.5 px-1.5 rounded font-bold pointer-events-none whitespace-nowrap z-10">
+                                                    {d.val.toFixed(2)} kg
+                                                </div>
+                                                <div class="w-full bg-slate-100 rounded-t-lg h-36 flex items-end">
+                                                    <div 
+                                                        class={`w-full rounded-t-lg transition-all duration-500 ${
+                                                            d.isToday 
+                                                                ? 'bg-gradient-to-t from-emerald-600 to-green-500' 
+                                                                : 'bg-emerald-300 group-hover:bg-emerald-400'
+                                                        }`}
+                                                        style={{ height: `${Math.max(d.val > 0 ? 8 : 2, heightPct)}%` }}
+                                                    ></div>
+                                                </div>
+                                                <div class="text-center">
+                                                    <span class="block text-[11px] font-bold text-slate-700">{d.date}</span>
+                                                    <span class="block text-[9px] text-slate-400 font-medium">{d.label}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-center justify-between text-xs">
+                                <span class="text-slate-400">최근 7일간 실천 기록</span>
+                                <span class="text-emerald-700 font-bold">주간 총합: {thisWeekSavings.toFixed(2)} kg CO₂</span>
+                            </div>
+                        </div>
+
+                        {/* 2. 행동별 절감 비율 도넛 차트 */}
+                        <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-pie text-emerald-600"></i> 행동별 절감 비율
+                                </h3>
+                                <span class="text-[11px] text-slate-400">누적 기준</span>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row items-center justify-center gap-6 my-auto py-2">
+                                {/* SVG 도넛 렌더링 */}
+                                <div class="relative w-36 h-36 shrink-0 flex items-center justify-center">
+                                    {totalCategorySavings === 0 ? (
+                                        <>
+                                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="38" stroke="#F1F5F9" stroke-width="14" fill="none" />
+                                            </svg>
+                                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
+                                                <span class="text-xs text-slate-400 font-semibold">데이터 없음</span>
+                                                <span class="text-[10px] text-slate-400">다이어리 작성</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="38" stroke="#F1F5F9" stroke-width="14" fill="none" />
+                                                {(() => {
+                                                    const circ = 2 * Math.PI * 38;
+                                                    let accumulated = 0;
+                                                    return donutCategories.map((c) => {
+                                                        const strokeLength = (c.pct / 100) * circ;
+                                                        const strokeDashoffset = -accumulated;
+                                                        accumulated += strokeLength;
+                                                        return (
+                                                            <circle
+                                                                key={c.label}
+                                                                cx="50"
+                                                                cy="50"
+                                                                r="38"
+                                                                stroke={c.color}
+                                                                stroke-width="14"
+                                                                stroke-dasharray={`${strokeLength} ${circ - strokeLength}`}
+                                                                stroke-dashoffset={strokeDashoffset}
+                                                                fill="none"
+                                                            />
+                                                        );
+                                                    });
+                                                })()}
+                                            </svg>
+                                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                                <span class="text-[10px] text-slate-400 font-medium">최대 실천</span>
+                                                <span class="text-xs font-black text-emerald-800">
+                                                    {topCategory ? `${topCategory.label} ${topCategory.pct}%` : '-'}
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                {/* 범례 (Legend) */}
+                                <div class="space-y-1.5 w-full sm:w-auto text-xs">
+                                    {donutCategories.map((cat) => (
+                                        <div key={cat.label} class="flex items-center justify-between gap-4">
+                                            <div class="flex items-center gap-2">
+                                                <span class="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }}></span>
+                                                <span class="text-slate-700 font-medium">{cat.label}</span>
+                                            </div>
+                                            <span class="font-bold text-slate-900">{cat.pct}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <p class="text-[11px] text-slate-400 text-center mt-2">
+                                {topCategory && topCategory.pct > 0 
+                                    ? `'${topCategory.label}' 부문의 실천 및 감축 비중이 가장 높습니다.` 
+                                    : '다이어리에 다양한 친환경 활동을 기록해보세요.'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* 하단 Sprout Mascot 응원 배너 */}
+                    <div class="bg-gradient-to-r from-emerald-600 to-green-700 rounded-2xl p-6 text-white shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-3xl shrink-0">
+                                🌱✨
+                            </div>
+                            <div>
+                                <h4 class="font-black text-lg">
+                                    {totalSavingsAll > 0 
+                                        ? `"지금까지 ${totalSavingsAll.toFixed(2)}kg의 탄소를 아꼈어요! 지구가 자랑스러워할 선물이에요!"`
+                                        : `"지구를 지키는 작은 실천, 오늘부터 함께 시작해볼까요?"`}
+                                </h4>
+                                <p class="text-xs text-emerald-100 mt-1">
+                                    {totalSavingsAll > 0 
+                                        ? `이는 30년생 소나무 약 ${pineTrees}그루가 1년 동안 흡수하는 이산화탄소 양과 맞먹는 훌륭한 기록입니다.`
+                                        : `일상 속 대중교통 이용, 텀블러 사용만으로도 큰 탄소 절감 효과를 만듭니다.`}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="shrink-0 bg-white text-emerald-800 font-black text-xs px-4 py-2.5 rounded-xl shadow-xs">
+                            {totalSavingsAll >= 10 ? '지구 환경 기여도 상위 5% 달성' : '에코 챌린지 도전자'}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        /* ========================================================
+           TAB 4: 🌐 글로벌 데이터 (Global Data)
+           Our World in Data (OWID) Gas & CO2 Datasets
+           ======================================================== */
+        function GlobalDataTab() {
+            const [filterTab, setFilterTab] = useState('country'); // 'country' | 'trend' | 'perCapita' | 'sector'
+            const [selectedCountryKey, setSelectedCountryKey] = useState('South Korea');
+            const [trendCountryKey, setTrendCountryKey] = useState('South Korea');
+
+            const currentCountry = OWID_GLOBAL_EMISSIONS.find(c => c.country === selectedCountryKey) || OWID_GLOBAL_EMISSIONS[5];
+            const currentTrend = HISTORICAL_DATA_BY_COUNTRY[trendCountryKey] || HISTORICAL_DATA_BY_COUNTRY['South Korea'];
+
+            return (
+                <div class="space-y-6">
+                    {/* 서브 헤더 */}
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <div class="flex items-center gap-2 text-xs font-bold text-emerald-700 mb-1">
+                                    <i class="fa-solid fa-earth-americas"></i>
+                                    <span>세계의 탄소 배출 데이터</span>
+                                </div>
+                                <h2 class="text-xl font-black text-slate-800">
+                                    글로벌 데이터를 통해 더 넓은 세상을 바라봐요.
+                                </h2>
+                            </div>
+                            <span class="text-[11px] bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-xl border border-emerald-200 self-start sm:self-auto">
+                                출처: Our World in Data (OWID) 2023 CO₂/Gas & GIR
+                            </span>
+                        </div>
+
+                        {/* 4개 인터랙티브 서브 메뉴 필터 탭 */}
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 pt-4 border-t border-slate-100 text-xs font-bold">
+                            {[
+                                { key: 'country', label: '국가별 비교', icon: 'fa-globe', desc: '주요 배출국 총량' },
+                                { key: 'trend', label: '연도별 변화', icon: 'fa-chart-line', desc: '1990-2023 시계열' },
+                                { key: 'perCapita', label: '1인당 배출량', icon: 'fa-user-group', desc: '1인당 순위 & 가스' },
+                                { key: 'sector', label: '분야별 배출량', icon: 'fa-pie-chart', desc: '세계 vs 한국 부문' }
+                            ].map(tab => {
+                                const isActive = filterTab === tab.key;
+                                return (
+                                    <button
+                                        key={tab.key}
+                                        onClick={() => setFilterTab(tab.key)}
+                                        class={`p-3 rounded-xl transition text-left flex flex-col justify-between cursor-pointer border ${
+                                            isActive 
+                                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
+                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-emerald-50 hover:text-emerald-800'
+                                        }`}
+                                    >
+                                        <div class="flex items-center justify-between w-full mb-1">
+                                            <span class="font-black text-xs sm:text-sm">{tab.label}</span>
+                                            <i class={`fa-solid ${tab.icon} ${isActive ? 'text-emerald-200' : 'text-slate-400'}`}></i>
+                                        </div>
+                                        <span class={`text-[10px] ${isActive ? 'text-emerald-100' : 'text-slate-400'}`}>{tab.desc}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* [서브메뉴 1] 🏛 국가별 비교 뷰 (Country Comparison) */}
+                    {filterTab === 'country' && (
+                        <div class="space-y-6">
+                            {/* 국가별 배출량 비교 (Top CO2 Emitter Countries 2023) */}
+                            <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 space-y-4">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div>
+                                        <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                            <i class="fa-solid fa-chart-bar text-emerald-600"></i> 주요 배출국 2023년 탄소 배출 총량 (단위: Mt CO₂)
+                                        </h3>
+                                        <p class="text-xs text-slate-400 mt-0.5">화석연료 및 시멘트 등 산업공정 기준 연간 총 이산화탄소 배출량</p>
+                                    </div>
+                                    <span class="text-xs font-semibold text-slate-500">항목 클릭 시 아래 카드가 변경됩니다</span>
+                                </div>
+
+                                {/* 수평 바 차트 */}
+                                <div class="space-y-3 pt-2">
+                                    {OWID_GLOBAL_EMISSIONS.map((item) => {
+                                        const maxVal = 12000;
+                                        const barWidthPct = Math.round((item.emissionsMt / maxVal) * 100);
+                                        const isSelected = item.country === selectedCountryKey;
+
+                                        return (
+                                            <div 
+                                                key={item.country} 
+                                                onClick={() => setSelectedCountryKey(item.country)}
+                                                class={`p-3 rounded-xl transition cursor-pointer border ${
+                                                    isSelected ? 'bg-emerald-50/80 border-emerald-400 shadow-xs ring-1 ring-emerald-300' : 'border-transparent hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                <div class="flex justify-between text-xs mb-1 font-semibold">
+                                                    <span class="text-slate-800 flex items-center gap-2">
+                                                        <span class="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></span>
+                                                        <span class="font-bold">{item.nameKo}</span>
+                                                        <span class="text-slate-400">({item.country})</span>
+                                                        {item.country === 'South Korea' && (
+                                                            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold">MY COUNTRY</span>
+                                                        )}
+                                                    </span>
+                                                    <span class="text-slate-700 font-bold">
+                                                        {item.emissionsMt.toLocaleString()} Mt
+                                                        <span class="text-[11px] text-slate-400 ml-2 font-normal">(1인당 {item.perCapitaT}t)</span>
+                                                    </span>
+                                                </div>
+                                                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                                                    <div 
+                                                        class="h-3 rounded-full transition-all duration-700" 
+                                                        style={{ width: `${barWidthPct}%`, backgroundColor: item.color }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 선택 국가 상세 카드 */}
+                            <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 space-y-5">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div>
+                                        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                                            국가 상세 지표 카드
+                                        </span>
+                                        <h3 class="text-lg font-black text-slate-800 mt-2">
+                                            {currentCountry.nameKo} ({currentCountry.country}) 핵심 탄소 프로필
+                                        </h3>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-xs font-bold text-slate-500">국가 선택:</label>
+                                        <select 
+                                            value={selectedCountryKey}
+                                            onChange={(e) => setSelectedCountryKey(e.target.value)}
+                                            class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-emerald-500 shadow-xs cursor-pointer"
+                                        >
+                                            {OWID_GLOBAL_EMISSIONS.map(c => (
+                                                <option key={c.country} value={c.country}>{c.nameKo} ({c.country})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div class="p-4 bg-emerald-50/60 rounded-xl border border-emerald-100 text-center">
+                                        <span class="text-xs text-emerald-800 font-semibold block">2023 연간 총 배출량</span>
+                                        <div class="text-2xl font-black text-emerald-700 mt-1">
+                                            {currentCountry.emissionsMt.toLocaleString()} <span class="text-xs font-bold text-emerald-900">Mt CO₂</span>
+                                        </div>
+                                        <span class="text-[11px] text-slate-500 mt-1 block">국가 전체 연간 배출 규모</span>
+                                    </div>
+
+                                    <div class="p-4 bg-blue-50/60 rounded-xl border border-blue-100 text-center">
+                                        <span class="text-xs text-blue-800 font-semibold block">1인당 탄소 배출량</span>
+                                        <div class="text-2xl font-black text-blue-700 mt-1">
+                                            {currentCountry.perCapitaT} <span class="text-xs font-bold text-blue-900">톤/인</span>
+                                        </div>
+                                        <span class="text-[11px] text-slate-500 mt-1 block">세계 평균(4.7톤)과 비교</span>
+                                    </div>
+
+                                    <div class="p-4 bg-amber-50/60 rounded-xl border border-amber-100 text-center">
+                                        <span class="text-xs text-amber-800 font-semibold block">세계 천연가스 탄소 점유율</span>
+                                        <div class="text-2xl font-black text-amber-700 mt-1">
+                                            {currentCountry.shareGas}
+                                        </div>
+                                        <span class="text-[11px] text-slate-500 mt-1 block">Share of global gas CO₂</span>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed">
+                                    <span class="font-bold text-slate-800 mr-1">📌 국가 분석 요약:</span>
+                                    {currentCountry.country === 'South Korea' && '대한민국은 제조업 및 철강·석유화학 비중이 높아 1인당 배출량이 11.6톤으로 OECD 국가 중 상위권에 속합니다. 2018년 피크 이후 재생에너지 확대와 탈석탄 기조를 가속화하고 있습니다.'}
+                                    {currentCountry.country === 'China' && '중국은 세계 최대 탄소 배출국(11,472 Mt)으로 글로벌 배출의 약 30%를 차지합니다. 석탄 의존도가 높으나 세계 최대 규모의 태양광·풍력 설비 투자를 병행하고 있습니다.'}
+                                    {currentCountry.country === 'USA' && '미국은 누적 역사적 탄소 배출량 1위이자 1인당 배출량 14.4톤의 고배출 국가입니다. 최근 인플레이션 감축법(IRA)을 통해 청정에너지 투자를 대폭 확대하고 있습니다.'}
+                                    {currentCountry.country === 'Germany' && '독일은 1990년 대비 탄소 배출량을 36% 이상 감축한 에너지전환 선도국입니다. 재생에너지 발전 비중이 50%를 돌파했습니다.'}
+                                    {currentCountry.country === 'Japan' && '일본은 고효율 산업 인프라를 바탕으로 1인당 8.5톤 수준을 유지하며 수소 경제 및 해상풍력 보급에 집중하고 있습니다.'}
+                                    {currentCountry.country === 'India' && '인도는 1인당 배출량이 1.8톤으로 낮으나 거대한 인구로 인해 총배출량이 3위입니다. 경제 성장과 탈탄소화의 균형이 주요 과제입니다.'}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* [서브메뉴 2] 📈 연도별 변화 뷰 (Yearly Trend View) */}
+                    {filterTab === 'trend' && (
+                        <div class="space-y-6">
+                            <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 space-y-6">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div>
+                                        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                                            장기 시계열 분석 (1990 - 2023)
+                                        </span>
+                                        <h3 class="text-lg font-black text-slate-800 mt-2">
+                                            {currentTrend.nameKo} 연도별 탄소 배출 추이 및 변곡점 분석
+                                        </h3>
+                                        <p class="text-xs text-slate-400 mt-0.5">상단 국가 버튼을 클릭하여 각국의 33년간 탈탄소화 경로를 비교해보세요.</p>
+                                    </div>
+
+                                    {/* 국가 선택 탭 버튼들 */}
+                                    <div class="flex flex-wrap gap-1.5 bg-slate-100 p-1.5 rounded-xl text-xs font-bold">
+                                        {Object.keys(HISTORICAL_DATA_BY_COUNTRY).map((key) => {
+                                            const c = HISTORICAL_DATA_BY_COUNTRY[key];
+                                            const isSelected = trendCountryKey === key;
+                                            return (
+                                                <button
+                                                    key={key}
+                                                    onClick={() => setTrendCountryKey(key)}
+                                                    class={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                                                        isSelected 
+                                                            ? 'bg-white text-emerald-800 shadow-xs font-black' 
+                                                            : 'text-slate-500 hover:text-slate-800'
+                                                    }`}
+                                                >
+                                                    {c.nameKo}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* 연도별 변화 요약 배너 */}
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl text-center">
+                                        <span class="text-[11px] text-emerald-800 font-bold block">배출 정점(피크) 연도</span>
+                                        <span class="text-xl font-black text-emerald-900 mt-0.5 block">{currentTrend.peakYear}년</span>
+                                        <span class="text-[10px] text-emerald-700">최대치: {currentTrend.peakVal}</span>
+                                    </div>
+                                    <div class="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl text-center">
+                                        <span class="text-[11px] text-blue-800 font-bold block">1990년 대비 변화율</span>
+                                        <span class="text-xl font-black text-blue-900 mt-0.5 block">{currentTrend.change1990}</span>
+                                        <span class="text-[10px] text-blue-700">33년간 총량 증감률</span>
+                                    </div>
+                                    <div class="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl text-center">
+                                        <span class="text-[11px] text-purple-800 font-bold block">2023년 최근 배출량</span>
+                                        <span class="text-xl font-black text-purple-900 mt-0.5 block">
+                                            {currentTrend.data[currentTrend.data.length - 1].totalMt.toLocaleString()} Mt
+                                        </span>
+                                        <span class="text-[10px] text-purple-700">Our World in Data 공식 집계</span>
+                                    </div>
+                                </div>
+
+                                {/* 동적 SVG 라인 차트 */}
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="text-xs font-bold text-slate-700">
+                                            연도별 배출량 추이 곡선 (1990 ~ 2023)
+                                        </h4>
+                                        <span class="text-[11px] text-slate-400">단위: Mt CO₂</span>
+                                    </div>
+
+                                    {/* 반응형 SVG 그래프 */}
+                                    <div class="w-full h-56 bg-slate-50/70 rounded-xl p-4 border border-slate-200 flex flex-col justify-between">
+                                        {(() => {
+                                            const data = currentTrend.data;
+                                            const vals = data.map(d => d.totalMt);
+                                            const minV = Math.floor(Math.min(...vals) * 0.8);
+                                            const maxV = Math.ceil(Math.max(...vals) * 1.15);
+                                            const rangeV = maxV - minV || 1;
+
+                                            const points = data.map((d, idx) => {
+                                                const x = (idx / (data.length - 1)) * 560 + 20;
+                                                const y = 130 - ((d.totalMt - minV) / rangeV) * 110;
+                                                return { x, y, data: d };
+                                            });
+
+                                            const pathD = points.reduce((acc, p, idx) => 
+                                                idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`
+                                            , '');
+
+                                            const areaD = `${pathD} L ${points[points.length - 1].x} 140 L ${points[0].x} 140 Z`;
+
+                                            return (
+                                                <svg class="w-full h-40 overflow-visible" viewBox="0 0 600 150" preserveAspectRatio="none">
+                                                    <defs>
+                                                        <linearGradient id={`grad-${trendCountryKey}`} x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor={currentTrend.color} stopOpacity="0.25" />
+                                                            <stop offset="100%" stopColor={currentTrend.color} stopOpacity="0.0" />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    {/* 가이드라인 */}
+                                                    <line x1="10" y1="20" x2="590" y2="20" stroke="#E2E8F0" stroke-dasharray="3 3" />
+                                                    <line x1="10" y1="75" x2="590" y2="75" stroke="#E2E8F0" stroke-dasharray="3 3" />
+                                                    <line x1="10" y1="130" x2="590" y2="130" stroke="#E2E8F0" stroke-dasharray="3 3" />
+
+                                                    {/* 영역 채우기 */}
+                                                    <path d={areaD} fill={`url(#grad-${trendCountryKey})`} />
+
+                                                    {/* 라인 곡선 */}
+                                                    <path d={pathD} fill="none" stroke={currentTrend.color} stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+                                                    {/* 데이터 포인트 및 값 */}
+                                                    {points.map((p, i) => (
+                                                        <g key={i}>
+                                                            <circle cx={p.x} cy={p.y} r="4.5" fill="#ffffff" stroke={currentTrend.color} stroke-width="2.5" />
+                                                            <text x={p.x} y={p.y - 8} font-size="9" font-weight="bold" fill="#334155" text-anchor="middle">
+                                                                {p.data.totalMt}
+                                                            </text>
+                                                        </g>
+                                                    ))}
+                                                </svg>
+                                            );
+                                        })()}
+
+                                        {/* X축 연도 라벨 */}
+                                        <div class="flex justify-between text-[10px] text-slate-400 font-semibold px-2 border-t border-slate-200 pt-1">
+                                            {currentTrend.data.map(d => (
+                                                <span key={d.year}>{d.year}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 bg-emerald-50/70 rounded-xl border border-emerald-200 text-xs text-emerald-950 leading-relaxed">
+                                    <span class="font-bold mr-1">🔍 {currentTrend.nameKo} 시계열 해석:</span>
+                                    {currentTrend.trendDesc}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* [서브메뉴 3] 👥 1인당 배출량 뷰 (Per Capita View) */}
+                    {filterTab === 'perCapita' && (
+                        <div class="space-y-6">
+                            <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 space-y-6">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div>
+                                        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                                            1인당 탄소 발자국 비교 (Per Capita Carbon Footprint)
+                                        </span>
+                                        <h3 class="text-lg font-black text-slate-800 mt-2">
+                                            글로벌 주요국 1인당 연간 온실가스 & CO₂ 배출량 랭킹 (2023)
+                                        </h3>
+                                        <p class="text-xs text-slate-400 mt-0.5">인구 규모에 따른 착시를 제거하고, 시민 1명이 1년 동안 배출하는 탄소량(톤/인)을 비교합니다.</p>
+                                    </div>
+                                    <div class="text-right bg-blue-50 px-3 py-2 rounded-xl border border-blue-200">
+                                        <span class="text-[10px] text-blue-700 font-bold block">전 세계 평균 배출량</span>
+                                        <span class="text-base font-black text-blue-900">4.7 톤 / 인</span>
+                                    </div>
+                                </div>
+
+                                {/* 1인당 배출량 랭킹 바 리스트 */}
+                                <div class="space-y-3 pt-2">
+                                    {PER_CAPITA_RANKINGS.map((p) => {
+                                        const maxPerCapita = 16.0;
+                                        const widthPct = Math.round((p.val / maxPerCapita) * 100);
+
+                                        return (
+                                            <div 
+                                                key={p.country} 
+                                                class={`p-3 rounded-xl border transition ${
+                                                    p.isHighlight 
+                                                        ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-200' 
+                                                        : p.isWorldAvg 
+                                                            ? 'bg-blue-50/70 border-blue-300' 
+                                                            : 'bg-slate-50/70 border-slate-100'
+                                                }`}
+                                            >
+                                                <div class="flex justify-between items-center text-xs mb-1 font-semibold">
+                                                    <span class="flex items-center gap-2">
+                                                        <span class="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }}></span>
+                                                        <span class={`font-bold ${p.isHighlight ? 'text-emerald-900' : p.isWorldAvg ? 'text-blue-900' : 'text-slate-800'}`}>
+                                                            {p.country}
+                                                        </span>
+                                                        {p.isHighlight && (
+                                                            <span class="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">우리나라</span>
+                                                        )}
+                                                        {p.isWorldAvg && (
+                                                            <span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold">글로벌 기준선</span>
+                                                        )}
+                                                    </span>
+                                                    <span class="font-black text-sm text-slate-800">
+                                                        {p.val} <span class="text-xs font-normal text-slate-500">톤/인</span>
+                                                        <span class="text-[11px] text-slate-400 font-normal ml-2">(가스 {p.gasVal}t)</span>
+                                                    </span>
+                                                </div>
+                                                <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                                                    <div 
+                                                        class="h-3 rounded-full transition-all duration-700" 
+                                                        style={{ width: `${widthPct}%`, backgroundColor: p.color }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* 한국 1인당 배출량 심층 분석 카드 */}
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                    <div class="p-4 bg-emerald-50/80 rounded-xl border border-emerald-200 space-y-2">
+                                        <h4 class="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                                            <i class="fa-solid fa-bullseye text-emerald-600"></i> 대한민국 1인당 배출량의 특징
+                                        </h4>
+                                        <p class="text-xs text-emerald-900 leading-relaxed">
+                                            대한민국 국민 1인당 연간 배출량은 <strong>11.6톤</strong>으로 전 세계 평균(4.7톤)의 약 <strong>2.5배</strong>에 달합니다. 이는 냉난방 수요뿐 아니라 국내 생산된 전력과 철강·화학 제품의 다소비 구조에 기인합니다.
+                                        </p>
+                                    </div>
+                                    <div class="p-4 bg-amber-50/80 rounded-xl border border-amber-200 space-y-2">
+                                        <h4 class="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                                            <i class="fa-solid fa-fire-flame-curved text-amber-600"></i> 천연가스(LNG) 1인당 2.359톤
+                                        </h4>
+                                        <p class="text-xs text-amber-900 leading-relaxed">
+                                            가스보일러 개별 난방과 LNG 복합화력 발전 의존도가 높아 가스 부문 1인당 배출량이 세계 상위권(2.359톤)에 랭크되어 있습니다. 실내 적정온도 유지와 대기전력 차단이 중요한 이유입니다.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* [서브메뉴 4] 🏭 분야별 배출량 뷰 (Sector Breakdown View) */}
+                    {filterTab === 'sector' && (
+                        <div class="space-y-6">
+                            {/* 분야별 배출 비교 메인 카드 */}
+                            <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 space-y-6">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div>
+                                        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                                            온실가스 인벤토리 분석 (GIR & OWID 기준 ~2023)
+                                        </span>
+                                        <h3 class="text-lg font-black text-slate-800 mt-2">
+                                            세계 vs 대한민국 분야별 온실가스(GHG) 배출 비중 비교
+                                        </h3>
+                                        <p class="text-xs text-slate-500 mt-0.5">
+                                            전기·열 생산(30~40%), 수송(15~20%), 제조업(12~15%), 농축산(10~12%), 건물(6~8%), 폐기물(3%)
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-xs font-bold">
+                                        <div class="flex items-center gap-1.5 text-blue-600">
+                                            <span class="w-3 h-3 rounded-full bg-blue-500"></span> 세계 평균 (World)
+                                        </div>
+                                        <div class="flex items-center gap-1.5 text-emerald-700">
+                                            <span class="w-3 h-3 rounded-full bg-emerald-600"></span> 대한민국 (Korea)
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 분야별 비교 프로그레스 바 목록 */}
+                                <div class="space-y-4 pt-2">
+                                    {SECTOR_BREAKDOWN_DATA.map((sec) => (
+                                        <div key={sec.id} class="p-3.5 bg-slate-50/70 border border-slate-100 rounded-xl hover:bg-slate-50 transition">
+                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-white" style={{ backgroundColor: sec.color }}>
+                                                        <i class={`fa-solid ${sec.icon}`}></i>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-xs font-bold text-slate-800">{sec.name}</span>
+                                                        <span class="text-[10px] text-slate-400 ml-1.5 font-medium">({sec.subName})</span>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-4 text-xs font-bold">
+                                                    <span class="text-blue-600">세계: {sec.worldPct}%</span>
+                                                    <span class="text-emerald-700 font-black">한국: {sec.koreaPct}%</span>
+                                                </div>
+                                            </div>
+
+                                            {/* 세계 vs 한국 바 비교 */}
+                                            <div class="space-y-1.5">
+                                                {/* 세계 바 */}
+                                                <div class="flex items-center gap-2 text-[10px]">
+                                                    <span class="w-8 text-slate-400 font-semibold">World</span>
+                                                    <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                        <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" style={{ width: `${sec.worldPct * 2}%` }}></div>
+                                                    </div>
+                                                    <span class="w-10 text-right text-slate-500 font-medium">{sec.worldPct}%</span>
+                                                </div>
+                                                {/* 한국 바 */}
+                                                <div class="flex items-center gap-2 text-[10px]">
+                                                    <span class="w-8 text-emerald-700 font-bold">Korea</span>
+                                                    <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                                        <div class="bg-emerald-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${sec.koreaPct * 2}%` }}></div>
+                                                    </div>
+                                                    <span class="w-10 text-right text-emerald-800 font-bold">{sec.koreaPct}%</span>
+                                                </div>
+                                            </div>
+
+                                            <p class="text-[11px] text-slate-500 mt-2 leading-relaxed bg-white/80 p-2 rounded-lg border border-slate-100">
+                                                💡 {sec.desc}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 주요 인사이트 분석 카드 */}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="bg-emerald-50/70 p-5 rounded-2xl border border-emerald-200/80">
+                                    <h4 class="text-sm font-bold text-emerald-950 flex items-center gap-2 mb-2">
+                                        <i class="fa-solid fa-lightbulb text-emerald-600"></i> 한국 배출 구조의 특징
+                                    </h4>
+                                    <p class="text-xs text-emerald-900 leading-relaxed">
+                                        대한민국은 철강, 석유화학, 반도체 등 <strong>에너지 집약적 제조업 비중이 35.6%</strong>로 세계 평균(13.8%) 대비 2.5배 이상 높습니다. 또한 전력 및 열 생산(37.0%)까지 합치면 전체 배출의 70% 이상이 산업과 전환 부문에 집중되어 있습니다.
+                                    </p>
+                                </div>
+                                <div class="bg-blue-50/70 p-5 rounded-2xl border border-blue-200/80">
+                                    <h4 class="text-sm font-bold text-blue-950 flex items-center gap-2 mb-2">
+                                        <i class="fa-solid fa-earth-americas text-blue-600"></i> 세계 평균과의 차이점
+                                    </h4>
+                                    <p class="text-xs text-blue-900 leading-relaxed">
+                                        전 세계적으로는 <strong>농축산 및 산림 전용(AFOLU)이 12.5%</strong>를 차지하며, 수송 부문(16.5%) 역시 높은 비중을 차지합니다. 개인의 채식 식단 실천과 대중교통 이용이 전 지구적 탄소 감축에 직접적인 영향을 주는 이유입니다.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Sprout Mascot 안내 박스 */}
+                    <div class="bg-emerald-50/70 border border-emerald-200/90 rounded-2xl p-5 flex items-start gap-4">
+                        <div class="text-3xl shrink-0">🌱</div>
+                        <div class="text-xs text-emerald-900 leading-relaxed">
+                            <span class="font-bold text-emerald-950 block text-sm mb-1">지구 상식 & 희망 메시지</span>
+                            세계의 탄소 배출량은 나라마다 차이가 커요. 나의 작은 실천이 모여 국가적인 전환을 이끌고 지구 전체에 긍정적인 영향을 줄 수 있습니다!
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        /* ========================================================
+           TAB 5: 💡 나의 성장 (My Growth)
+           ======================================================== */
+        function MyGrowthTab({ userLevel, levelName, levelIcon, levelExpPct, remainingKg, streakDays, badges, totalSavingsAll }) {
+            const unlockedCount = badges ? badges.filter(b => b.unlocked).length : 0;
+            const totalBadgesCount = badges ? badges.length : 6;
+
+            return (
+                <div class="space-y-6">
+                    {/* 상단 헤더 */}
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800">나의 친환경 성장</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">매일의 작은 탄소 절감이 모여 지구를 위한 큰 숲을 이룹니다.</p>
+                        </div>
+                        <span class="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 self-start sm:self-auto">
+                            누적 절감: {totalSavingsAll.toFixed(2)} kg CO₂
+                        </span>
+                    </div>
+
+                    {/* 성장 레벨 & 캐릭터 상태 카드 */}
+                    <div class="bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 p-6 rounded-2xl border border-emerald-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6">
+                        <div class="flex items-center gap-5">
+                            <div class="w-20 h-20 bg-white rounded-2xl p-2 flex items-center justify-center text-4xl shadow-sm border border-emerald-200 shrink-0">
+                                {levelIcon}
+                            </div>
+                            <div>
+                                <span class="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                                    LEVEL {userLevel}
+                                </span>
+                                <h3 class="text-xl font-black text-emerald-950 mt-1">{levelName}</h3>
+                                <p class="text-xs text-emerald-800/80 mt-1">
+                                    {userLevel < 4 ? (
+                                        <>다음 레벨까지 <strong>{remainingKg.toFixed(2)}kg CO₂</strong> 남았습니다!</>
+                                    ) : (
+                                        <>최고 레벨(울창한 숲)을 달성했습니다! 진정한 지구 수호자!</>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* 레벨 게이지 바 */}
+                        <div class="w-full sm:w-64 bg-white/80 p-4 rounded-xl border border-emerald-200">
+                            <div class="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
+                                <span>성장 경험치</span>
+                                <span class="text-emerald-700">{levelExpPct}%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                                <div class="bg-emerald-600 h-3 rounded-full transition-all duration-500" style={{ width: `${levelExpPct}%` }}></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 연속 기록 카드 (Streak Card) */}
+                    <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                                    연속 기록 (Streak)
+                                </span>
+                                <h3 class="text-lg font-bold text-slate-800 mt-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-fire text-amber-500"></i> 연속 기록 {streakDays}일째 진행 중!
+                                </h3>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500">목표: 30일 챌린지</span>
+                        </div>
+
+                        {/* 30 days progress bar */}
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1.5">
+                                <span>30일 챌린지 달성 현황</span>
+                                <span class="text-amber-600 font-bold">{streakDays} / 30 일 ({((streakDays / 30) * 100).toFixed(1)}%)</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-4 p-0.5 overflow-hidden border border-slate-200">
+                                <div 
+                                    class="bg-gradient-to-r from-amber-400 to-amber-500 h-full rounded-full transition-all duration-500" 
+                                    style={{ width: `${Math.min(100, (streakDays / 30) * 100)}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 배지 섹션 ("나의 배지") */}
+                    <div class="bg-white p-6 rounded-2xl shadow-xs border border-emerald-100 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-award text-amber-500"></i> 나의 획득 배지
+                            </h3>
+                            <span class="text-xs text-slate-400">총 {totalBadgesCount}개 중 {unlockedCount}개 획득</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {badges.map(b => (
+                                <div 
+                                    key={b.id} 
+                                    class={`p-4 rounded-2xl border transition flex items-start gap-3.5 ${
+                                        b.unlocked 
+                                            ? 'bg-amber-50/40 border-amber-200/90 shadow-xs' 
+                                            : 'bg-slate-50/60 border-slate-200 opacity-60'
+                                    }`}
+                                >
+                                    <div class={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-xs ${
+                                        b.unlocked 
+                                            ? `bg-gradient-to-tr ${b.color} text-white` 
+                                            : 'bg-slate-200 text-slate-400'
+                                    }`}>
+                                        <i class={`fa-solid ${b.icon}`}></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between gap-1">
+                                            <h4 class="font-bold text-xs text-slate-800 truncate">{b.title}</h4>
+                                            <span class={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                                b.unlocked ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-500'
+                                            }`}>
+                                                {b.tag}
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 mt-1 leading-snug">{b.desc}</p>
+                                        {!b.unlocked && b.progress && (
+                                            <div class="mt-2 text-[10px] font-semibold text-slate-400">
+                                                진행률: {b.progress}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 일일 응원 배너 (Daily Encourage Banner) */}
+                    <div class="bg-gradient-to-r from-emerald-100 via-green-100 to-emerald-50 rounded-2xl p-6 border border-emerald-200 flex items-center gap-4">
+                        <div class="text-3xl shrink-0">🌱💬</div>
+                        <div>
+                            <h4 class="font-black text-sm text-emerald-950">"매일 10분, 나를 돌아보고 지구를 돌보는 시간"</h4>
+                            <p class="text-xs text-emerald-800 mt-1 leading-relaxed">
+                                오늘 하루 동안 아낀 작은 에너지가 모여 내일의 맑은 공기를 만듭니다. 오늘도 함께해주셔서 고마워요!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 렌더링 시작
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
